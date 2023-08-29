@@ -2,6 +2,7 @@
 #define Nigga_ ios::sync_with_stdio(false), cin.tie(0), cout.tie(0);
 #define all(x) x.begin(), x.end()
 //#define int long long
+//test
 typedef long long ll;
 const int MOD = 1e9 + 7;
 const short dx[] = {-1, 0, 0, 1, 1, -1, 1, -1};
