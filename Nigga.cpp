@@ -134,7 +134,7 @@ void go() {
 int32_t main()
 {
     Nigga_
-    cout << fixed << setprecision(10);
+    cout << fixed << setprecision(6);
     //freopen("output.txt", "w", stdout); freopen("input.txt", "r", stdin);
     int test = 1; //cin >> test;
     while (test-- > 0){
