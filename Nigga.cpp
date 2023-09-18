@@ -11,7 +11,7 @@ const short dy[] = {0, -1, 1, 0, 1, -1, -1, 1};
 const char dc[] = {'U', 'L', 'R', 'D'};
 using namespace std;
 using namespace __gnu_pbds;
-//----------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
 template<typename K, typename V, typename Comp = less<K>>
 using ordered_map = tree<K, V, Comp, rb_tree_tag, tree_order_statistics_node_update>;
 template<typename K, typename Comp = less<K>>
@@ -21,7 +21,7 @@ template<typename K, typename V, typename Comp = less_equal<K>>
 using ordered_multimap = tree<K, V, Comp, rb_tree_tag, tree_order_statistics_node_update>;
 template<typename K, typename Comp = less_equal<K>>
 using ordered_multiset = ordered_multimap<K, null_type, Comp>;
-//----------------------------------------------------------------------------------
+//---------------------------------------------------------------------------------
 template<typename T> using min_queue = priority_queue<T, vector<T>, greater<>>;
 
 template<typename T> struct nT {
