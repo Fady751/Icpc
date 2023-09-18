@@ -4,7 +4,7 @@
 using namespace std;
 
 void packet() {
-    cout << "test\n";
+    
 }
 
 int32_t main() {
