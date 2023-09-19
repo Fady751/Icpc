@@ -5,7 +5,8 @@ using ll = long long;
 using namespace std;
 
 void packet() {
-
+    int n, m;
+    cin >> n >> m;
 }
 
 int32_t main() {
