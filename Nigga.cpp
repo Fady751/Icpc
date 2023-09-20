@@ -5,7 +5,8 @@
 #define all(x) x.begin(), x.end()
 //#define int long long
 typedef long long ll;
-const int MOD = 1e9 + 7;
+const int MOD = 1e9 + 7, inf = (1 << 30) - 1;
+const ll INF = 1e18;
 const short dx[] = {-1, 0, 0, 1, 1, -1, 1, -1};
 const short dy[] = {0, -1, 1, 0, 1, -1, -1, 1};
 const char dc[] = {'U', 'L', 'R', 'D'};
@@ -96,90 +97,65 @@ template<typename T> struct nT {
     }
 };
 
-
-class segtree {
-    struct node{
-        int v;
-        bool f = false;
-        int e = 0;
+class SegmentTree {
+    struct node {
         node *l, *r;
-        explicit node(int v = 1e7, node *l = nullptr, node *r = nullptr) : v(v), l(l), r(r) { }
-    };
-    void update(node *x) {
-        if(x && x->f) {
-            x->f = false;
-            x->v += x->e;
-            if(x->l)
-                x->l->f = true, x->l->e += x->e;
-            if(x->r)
-                x->r->f = true, x->r->e += x->e;
-            x->e = 0;
+        ll v;
+        explicit node(ll v = {}, node *l = nullptr, node *r = nullptr)
+                : v(v), r(r), l(l) {
         }
-    }
+    };
+    vector<int> &arr;
+    node *root = nullptr;
+    int size;
     void merge(node *x) {
-        update(x), update(x->l), update(x->r);
-        x->v = min(x->l->v, x->r->v);
+        x->v = x->l->v + x->r->v;
     }
     node *build(int lx, int rx) {
         if(lx == rx)
             return new node(arr[lx]);
 
         int m = (lx + rx) >> 1;
-        node *l = build(lx, m), *r = build(m + 1, rx), *x = new node(1e9, l, r);
+        node *l = build(lx, m),
+                *r = build(m + 1, rx),
+                *x = new node({}, l, r);
         merge(x);
         return x;
     }
-    int q(node *x, int lx, int rx, int l, int r) {
-        update(x);
+    ll get(node *x, int lx, int rx, int l, int r, int v) {
         if(lx > r || l > rx)
-            return 1e9;
+            return 0;
         if(lx >= l && rx <= r)
             return x->v;
         int m = (lx + rx) >> 1;
-        return min(q(x->l, lx, m, l, r), q(x->r, m + 1, rx, l, r));
+        return get(x->l, lx, m, l, r, v) + get(x->r, m + 1, rx, l, r, v);
     }
-    void setRange(node *x, int lx, int rx, int l, int r, int v) {
-        update(x);
-        if(lx > r || l > rx)
-            return;
-        if(lx >= l && rx <= r) {
-            x->f = true;
-            x->e += v;
-            update(x);
-            return;
-        }
+    void set(node *x, int lx, int rx, int i) {
+        if(lx == rx)
+            return void(x->v = arr[lx]);
         int m = (lx + rx) >> 1;
-        setRange(x->l, lx, m, l, r, v);
-        setRange(x->r, m + 1, rx, l, r, v);
-        merge(x);
+        i <= m? set(x->l, lx, m, i): set(x->r, m + 1, rx, i);
     }
-    int size;
-    node *root = nullptr;
-    vector<int> &arr;
     void del(node *x) {
-        if(x) {
+        if(x){
             del(x->l);
             del(x->r);
             delete x;
         }
     }
-public:
-    explicit segtree(vector<int> &arr) : arr(arr), size((int)arr.size() - 1) {
-        root = build(0, size);
+public://based index 1
+    explicit SegmentTree(vector<int> &arr) : size((int)arr.size() - 1), arr(arr) {
+        root = build(1, size);
     }
-    ~segtree() {
+    ~SegmentTree(){
         del(root);
     }
-    int Q(int l, int r) {
-        if(l <= r)
-            return q(root, 0, size, l, r);
-        return min(q(root, 0, size, 0, r), q(root, 0, size, l, size));
+    void set(int i, int v) {
+        arr[i] = v;
+        set(root, 1, size, i);
     }
-    void setRange(int l, int r, int v) {
-        if(l <= r)
-            setRange(root, 0, size, l, r, v);
-        else
-            setRange(root, 0, size, 0, r, v), setRange(root, 0, size, l, size, v);
+    ll ans(int l, int r, int v) {
+        return get(root, 1, size, l, r, v);
     }
 };
 
