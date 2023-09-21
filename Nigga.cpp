@@ -6,7 +6,7 @@
 //#define int long long
 typedef long long ll;
 const int MOD = 1e9 + 7, inf = (1 << 30) - 1;
-const ll INF = 1e18;
+const ll INF = (1LL << 62) - 1;
 const short dx[] = {-1, 0, 0, 1, 1, -1, 1, -1};
 const short dy[] = {0, -1, 1, 0, 1, -1, -1, 1};
 const char dc[] = {'U', 'L', 'R', 'D'};
