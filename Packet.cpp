@@ -11,7 +11,7 @@ void packet() {
 int32_t main() {
     Packet
     int tt = 1;
-    cin >> tt;
+    //cin >> tt;
     for (int test = 1; test <= tt; ++test) {
         packet();
     }
