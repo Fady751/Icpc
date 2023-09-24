@@ -135,6 +135,7 @@ class SegmentTree {
             return void(x->v = arr[lx]);
         int m = (lx + rx) >> 1;
         i <= m? set(x->l, lx, m, i): set(x->r, m + 1, rx, i);
+        merge(x);
     }
     void del(node *x) {
         if(x){
