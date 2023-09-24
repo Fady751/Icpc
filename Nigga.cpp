@@ -122,13 +122,13 @@ class SegmentTree {
         merge(x);
         return x;
     }
-    ll get(node *x, int lx, int rx, int l, int r, int v) {
+    ll get(node *x, int lx, int rx, int l, int r) {
         if(lx > r || l > rx)
             return 0;
         if(lx >= l && rx <= r)
             return x->v;
         int m = (lx + rx) >> 1;
-        return get(x->l, lx, m, l, r, v) + get(x->r, m + 1, rx, l, r, v);
+        return get(x->l, lx, m, l, r) + get(x->r, m + 1, rx, l, r);
     }
     void set(node *x, int lx, int rx, int i) {
         if(lx == rx)
@@ -156,7 +156,7 @@ public://based index 1
         set(root, 1, size, i);
     }
     ll ans(int l, int r, int v) {
-        return get(root, 1, size, l, r, v);
+        return get(root, 1, size, l, r);
     }
 };
 
