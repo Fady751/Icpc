@@ -39,17 +39,21 @@ template<typename T> struct nT {
     }
     void buildSieve(int sieve){
         Sieve.resize(sieve + 1, 0);
-        for (int i = 1; i <= sieve; i++){
-            for(int j = i; j <= sieve; j += i)
-                Sieve[j]++;
+        for (int i = 2; i <= sieve; i++){
+            if(!Sieve[i]) {
+                Sieve[i] = i;
+                for(int j = i * i; j <= sieve; j += i)
+                    Sieve[j] = i;
+            }
         }
 
     }
     bool isPrime(ll num) {
-        if (num == 2) return true;
-        if (num % 2 == 0 || num < 2) return false;
-        for (ll i = 3; i * i <= num; i += 2)
-            if (num % i == 0)
+        if(num < 2) return false;
+        if(num < 4) return true;
+        if(num % 2 == 0 || num % 3 == 0) return false;
+        for (ll i = 5; i * i <= num; i += 6)
+            if (num % i == 0 || num % (i + 2) == 0)
                 return false;
         return true;
     }
@@ -159,6 +163,69 @@ public://based index 1
         return get(root, 1, size, l, r);
     }
 };
+
+struct sparse{
+    int Log, n;
+    vector<vector<int>> table;
+    vector<int> LOG;
+    int merge(int &x, int &y) {
+        return max(x, y);
+    }
+    explicit sparse(vector<int> &arr) : n((int)arr.size()), Log((int)log2(arr.size()) + 1) {
+        table.resize(Log, vector<int>(n));
+        table[0] = arr;
+        LOG.resize(n + 1);
+        for(int i = 2; i <= n; i++)
+            LOG[i] = LOG[i >> 1] + 1;
+        for(int l = 1; l < Log; l++) {
+            for(int i = 0; i + (1 << (l - 1)) < n; i++) {
+                table[l][i] = merge(table[l - 1][i], table[l - 1][i + (1 << (l - 1))]);
+            }
+        }
+    }
+    int ans(int l, int r) {
+        if(l > r)
+            return 0;
+        int len = LOG[r - l + 1];
+        return merge(table[len][l], table[len][r - (1 << len) + 1]);
+    }
+};
+
+namespace Hash{
+    using pi = pair<int, int>;
+    const int b1 = 31, b2 = 69, mod = 1e9 + 7;
+    int mul(int x, int y) {
+        x = (x % mod + mod) % mod;
+        y = (y % mod + mod) % mod;
+        return int(1LL * x * y % mod);
+    }
+    int plus(int x, int y) {
+        x = (x % mod + mod) % mod;
+        y = (y % mod + mod) % mod;
+        return int((0LL + x + y) % mod);
+    }
+    int fastPower(int b, int p) {
+        if(p == 0) return 1;
+        ll res = fastPower(b, p >> 1);
+        return int(res * res % mod * (p & 1? b: 1) % mod);
+    }
+    const int b1I = fastPower(b1, mod - 2), b2I = fastPower(b2, mod - 2);
+    pi shiftL(pi code) {
+        return {mul(code.first, b1), mul(code.second, b2)};
+    }
+    pi shiftR(pi code) {
+        return {mul(code.first, b1I), mul(code.second, b2I)};
+    }
+    pi add(pi code, int at, int val) {
+        return {plus(mul(val, fastPower(b1, at)), code.first),
+                plus(mul(val, fastPower(b2, at)), code.second)};
+    }
+    pi remove(pi code, int at, int val) {
+        return {plus(code.first, -mul(fastPower(b1, at), val)),
+                plus(code.second, -mul(fastPower(b2, at), val))};
+    }
+}
+//using namespace Hash;
 
 void go() {
 
