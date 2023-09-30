@@ -191,9 +191,10 @@ struct sparse{
     }
 };
 
-namespace Hash{
+class Hash{
     using pi = pair<int, int>;
     const int b1 = 31, b2 = 69, mod = 1e9 + 7;
+    vector<int> Pb1, Pb2;
     int mul(int x, int y) {
         x = (x % mod + mod) % mod;
         y = (y % mod + mod) % mod;
@@ -206,26 +207,55 @@ namespace Hash{
     }
     int fastPower(int b, int p) {
         if(p == 0) return 1;
-        ll res = fastPower(b, p >> 1);
+        long long res = fastPower(b, p >> 1);
         return int(res * res % mod * (p & 1? b: 1) % mod);
     }
     const int b1I = fastPower(b1, mod - 2), b2I = fastPower(b2, mod - 2);
-    pi shiftL(pi code) {
-        return {mul(code.first, b1), mul(code.second, b2)};
+public:
+    Hash(int maxSize) {
+        Pb1.resize(maxSize, 1);
+        Pb2.resize(maxSize, 1);
+        for(int i = 1; i < maxSize; i++) {
+            Pb1[i] = int(1LL * Pb1[i - 1] * b1 % mod);
+            Pb2[i] = int(1LL * Pb2[i - 1] * b2 % mod);
+        }
     }
-    pi shiftR(pi code) {
-        return {mul(code.first, b1I), mul(code.second, b2I)};
+    pi shiftL(pi codex) {
+        return {mul(codex.first, b1), mul(codex.second, b2)};
     }
-    pi add(pi code, int at, int val) {
-        return {plus(mul(val, fastPower(b1, at)), code.first),
-                plus(mul(val, fastPower(b2, at)), code.second)};
+    pi shiftR(pi codex) {
+        return {mul(codex.first, b1I), mul(codex.second, b2I)};
     }
-    pi remove(pi code, int at, int val) {
-        return {plus(code.first, -mul(fastPower(b1, at), val)),
-                plus(code.second, -mul(fastPower(b2, at), val))};
+    pi add(pi codex, int at, int val) {
+        return {plus(mul(val, Pb1[at]), codex.first),
+                plus(mul(val, Pb2[at]), codex.second)};
     }
-}
-//using namespace Hash;
+    pi remove(pi codex, int at, int val) {
+        return {plus(codex.first, -mul(Pb1[at], val)),
+                plus(codex.second, -mul(Pb2[at], val))};
+    }
+    pi code{};
+    int size{};
+    void push_back(int x) {
+        code = add(code, size++, x);
+    }
+    void push_front(int x) {
+        code = shiftL(code);
+        code = add(code, 0, x);
+        size++;
+    }
+    void remove_back(int x) {
+        code = remove(code, --size, x);
+    }
+    void remove_front(int x) {
+        code = remove(code, 0, x);
+        code = shiftR(code);
+        size--;
+    }
+    void clear() {
+        code = {}, size = 0;
+    }
+};
 
 void go() {
 
