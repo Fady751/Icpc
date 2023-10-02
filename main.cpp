@@ -4,7 +4,7 @@
 using ll = long long;
 using namespace std;
 
-void _T_() {
+void Uwu() {
     
 }
 
@@ -13,7 +13,7 @@ int32_t main() {
     int tt = 1;
     //cin >> tt;
     for (int test = 1; test <= tt; ++test) {
-        _T_();
+        Uwu();
     }
     return 0;
 }
