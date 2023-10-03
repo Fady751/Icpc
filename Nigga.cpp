@@ -25,25 +25,25 @@ using ordered_multiset = ordered_multimap<K, null_type, Comp>;
 //---------------------------------------------------------------------------------
 template<typename T> using min_queue = priority_queue<T, vector<T>, greater<>>;
 
-template<typename T> struct nT {
-    T mod;
+namespace numberTheory {
+    using T = int;
+    T mod = 1e9 + 7;
     vector <T> fac;
-    vector<int> Sieve;
+    vector<int> sieve;
 
-    explicit nT(T m = 1e9 + 7) : mod(m) {}
     void buildFac(int numberOfFactorial){
         fac.resize(numberOfFactorial + 1);
         fac[0] = 1;
         for (int i = 1; i <= numberOfFactorial; i++)
-            fac[i] = ((__int128) fac[i - 1] * i) % mod;
+            fac[i] = T((__int128(fac[i - 1]) * i) % mod);
     }
-    void buildSieve(int sieve){
-        Sieve.resize(sieve + 1, 0);
-        for (int i = 2; i <= sieve; i++){
-            if(!Sieve[i]) {
-                Sieve[i] = i;
-                for(int j = i * i; j <= sieve; j += i)
-                    Sieve[j] = i;
+    void buildSieve(int n){
+        sieve.resize(n + 1);
+        for (int i = 2; i <= n; i++){
+            if(!sieve[i]) {
+                sieve[i] = i;
+                for(int j = i * i; j <= n; j += i)
+                    sieve[j] = i;
             }
         }
 
@@ -61,10 +61,8 @@ template<typename T> struct nT {
     T fastPower(T base, T power) {
         if (power < 0) return 0;
         if (power == 0) return 1;
-        if (power == 1) return base;
         T temp = fastPower(base, power / 2);
-        if (power & 1) return ((__int128) temp * temp * base) % mod;
-        return ((__int128) temp * temp) % mod;
+        return T((__int128(temp) * temp * (power & 1? base: 1)) % mod);
     }
 
     void moveOneStep(T &a, T &b, T q) {
@@ -87,19 +85,20 @@ template<typename T> struct nT {
     T modularInverse(T num) {
         T x, y, g = eGcd(num, mod, x, y);
         assert(g == 1);
-        return ((__int128) x + mod) % mod;
+        return (x + mod) % mod;
     }
 
     T nCr(T n, T r) {
         if (r > n) return 0;
-        return ((__int128) fac[n] * modularInverse(((__int128) fac[n - r] * fac[r]) % mod)) % mod;
+        return T((__int128(fac[n]) * modularInverse(T((__int128(fac[n - r]) * fac[r]) % mod))) % mod);
     }
 
     T nPr(T n, T r) {
         if (r > n) return 0;
-        return ((__int128) fac[n] * modularInverse(fac[n - r])) % mod;
+        return T((__int128(fac[n]) * modularInverse(fac[n - r])) % mod);
     }
-};
+}
+//using namespace numberTheory;
 
 class SegmentTree {
     struct node {
@@ -159,7 +158,7 @@ public://based index 1
         arr[i] = v;
         set(root, 1, size, i);
     }
-    ll ans(int l, int r, int v) {
+    ll ans(int l, int r) {
         return get(root, 1, size, l, r);
     }
 };
@@ -191,25 +190,26 @@ struct sparse{
     }
 };
 
-int b1 = 31, b2 = 69, mod = 1e9 + 7, b1I = 129032259, b2I = 579710149;
-vector<int> Pb1, Pb2;
-void pre(unsigned maxSize) {
-    Pb1=Pb2=vector<int>(maxSize + 1, 1);
-    for(int i = 1; i <= maxSize; i++) {
-        Pb1[i] = int(1LL * Pb1[i - 1] * b1 % mod);
-        Pb2[i] = int(1LL * Pb2[i - 1] * b2 % mod);
-    }
-}
-class Hash{
+namespace RollingHash {
+    int b1 = 31, b2 = 69, mod = 1e9 + 7, b1I = 129032259, b2I = 579710149;
+    vector<int> Pb1, Pb2;
     using pi = pair<int, int>;
+
+    void pre(unsigned maxSize) {
+        Pb1 = Pb2 = vector<int>(maxSize + 1, 1);
+        for (int i = 1; i <= maxSize; i++) {
+            Pb1[i] = int(1LL * Pb1[i - 1] * b1 % mod);
+            Pb2[i] = int(1LL * Pb2[i - 1] * b2 % mod);
+        }
+    }
     int mul(int &x, int &y) {
         return int(1LL * x * y % mod);
     }
     int plus(int x, int y) {
         return int((0LL + x + y + mod) % mod);
     }
-    void shiftL(pi &codex) {
-        codex = {mul(codex.first, b1), mul(codex.second, b2)};
+    void shiftL(pi &codex, int by = 1) {
+        codex = {mul(codex.first, Pb1[by]), mul(codex.second, Pb2[by])};
     }
     void shiftR(pi &codex) {
         codex = {mul(codex.first, b1I), mul(codex.second, b2I)};
@@ -222,46 +222,50 @@ class Hash{
         codex = {plus(codex.first, -mul(Pb1[at], val)),
                  plus(codex.second, -mul(Pb2[at], val))};
     }
-public:
-    pi code{};
-    int size{};
-    void push_back(int x) {
-        add(code, size++, x);
-    }
-    void push_front(int x) {
-        shiftL(code);
-        add(code, 0, x);
-        size++;
-    }
-    void pop_back(int x) {
-        remove(code, --size, x);
-    }
-    void pop_front(int x) {
-        remove(code, 0, x);
-        shiftR(code);
-        size--;
-    }
-    void clear() {
-        code = {}, size = 0;
-    }
-    Hash operator +(const Hash &o) {
-        Hash ans;
-        ans.code = {plus(mul(code.first, Pb1[o.size]), o.code.first),
-                    plus(mul(code.second, Pb2[o.size]), o.code.second)};
-        ans.size = size + o.size;
-        return ans;
-    }
-    bool operator <(const Hash &o) const {
-        if(code == o.code) return size < o.size;
-        return code < o.code;
-    }
-    bool operator ==(const Hash &o) const {
-        return size == o.size && code == o.code;
-    }
-    bool operator !=(const Hash &o) const {
-        return size != o.size || code != o.code;
-    }
-};
+    class Hash {
+        pi code{};
+        int size{};
+
+        void push_back(int x) {
+            add(code, size++, x);
+        }
+        void push_front(int x) {
+            shiftL(code);
+            add(code, 0, x);
+            size++;
+        }
+        void pop_back(int x) {
+            remove(code, --size, x);
+        }
+        void pop_front(int x) {
+            remove(code, 0, x);
+            shiftR(code);
+            size--;
+        }
+        void clear() {
+            code = {}, size = 0;
+        }
+
+        Hash operator+(const Hash &o) {
+            Hash ans;
+            ans.code = {plus(mul(code.first, Pb1[o.size]), o.code.first),
+                        plus(mul(code.second, Pb2[o.size]), o.code.second)};
+            ans.size = size + o.size;
+            return ans;
+        }
+        bool operator<(const Hash &o) const {
+            if (code == o.code) return size < o.size;
+            return code < o.code;
+        }
+        bool operator==(const Hash &o) const {
+            return size == o.size && code == o.code;
+        }
+        bool operator!=(const Hash &o) const {
+            return size != o.size || code != o.code;
+        }
+    };
+}
+//using namespace RollingHash;
 
 namespace Trie{
     struct node{
@@ -298,7 +302,7 @@ namespace Trie{
 }
 //using namespace Trie;
 
-void go() {
+void solve() {
 
 }
 
@@ -306,9 +310,10 @@ int32_t main() {
     Nigga_
     cout << fixed << setprecision(10);
     //freopen("output.txt", "w", stdout); freopen("input.txt", "r", stdin);
-    int test = 1; //cin >> test;
-    while (test-- > 0){
-        go();
+    int test = 1;
+    //cin >> test;
+    while(test-- > 0) {
+        solve();
     }
     return 0;
 }
