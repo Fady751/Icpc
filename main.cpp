@@ -5,7 +5,7 @@ using ll = long long;
 using namespace std;
 
 void Uwu() {
-    
+
 }
 
 int32_t main() {

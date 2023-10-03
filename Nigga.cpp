@@ -191,71 +191,112 @@ struct sparse{
     }
 };
 
+int b1 = 31, b2 = 69, mod = 1e9 + 7, b1I = 129032259, b2I = 579710149;
+vector<int> Pb1, Pb2;
+void pre(unsigned maxSize) {
+    Pb1=Pb2=vector<int>(maxSize + 1, 1);
+    for(int i = 1; i <= maxSize; i++) {
+        Pb1[i] = int(1LL * Pb1[i - 1] * b1 % mod);
+        Pb2[i] = int(1LL * Pb2[i - 1] * b2 % mod);
+    }
+}
 class Hash{
     using pi = pair<int, int>;
-    const int b1 = 31, b2 = 69, mod = 1e9 + 7;
-    vector<int> Pb1, Pb2;
-    int mul(int x, int y) {
-        x = (x % mod + mod) % mod;
-        y = (y % mod + mod) % mod;
+    int mul(int &x, int &y) {
         return int(1LL * x * y % mod);
     }
     int plus(int x, int y) {
-        x = (x % mod + mod) % mod;
-        y = (y % mod + mod) % mod;
-        return int((0LL + x + y) % mod);
+        return int((0LL + x + y + mod) % mod);
     }
-    int fastPower(int b, int p) {
-        if(p == 0) return 1;
-        long long res = fastPower(b, p >> 1);
-        return int(res * res % mod * (p & 1? b: 1) % mod);
+    void shiftL(pi &codex) {
+        codex = {mul(codex.first, b1), mul(codex.second, b2)};
     }
-    const int b1I = fastPower(b1, mod - 2), b2I = fastPower(b2, mod - 2);
+    void shiftR(pi &codex) {
+        codex = {mul(codex.first, b1I), mul(codex.second, b2I)};
+    }
+    void add(pi &codex, int at, int &val) {
+        codex = {plus(mul(val, Pb1[at]), codex.first),
+                 plus(mul(val, Pb2[at]), codex.second)};
+    }
+    void remove(pi &codex, int at, int &val) {
+        codex = {plus(codex.first, -mul(Pb1[at], val)),
+                 plus(codex.second, -mul(Pb2[at], val))};
+    }
 public:
-    Hash(int maxSize) {
-        Pb1.resize(maxSize, 1);
-        Pb2.resize(maxSize, 1);
-        for(int i = 1; i < maxSize; i++) {
-            Pb1[i] = int(1LL * Pb1[i - 1] * b1 % mod);
-            Pb2[i] = int(1LL * Pb2[i - 1] * b2 % mod);
-        }
-    }
-    pi shiftL(pi codex) {
-        return {mul(codex.first, b1), mul(codex.second, b2)};
-    }
-    pi shiftR(pi codex) {
-        return {mul(codex.first, b1I), mul(codex.second, b2I)};
-    }
-    pi add(pi codex, int at, int val) {
-        return {plus(mul(val, Pb1[at]), codex.first),
-                plus(mul(val, Pb2[at]), codex.second)};
-    }
-    pi remove(pi codex, int at, int val) {
-        return {plus(codex.first, -mul(Pb1[at], val)),
-                plus(codex.second, -mul(Pb2[at], val))};
-    }
     pi code{};
     int size{};
     void push_back(int x) {
-        code = add(code, size++, x);
+        add(code, size++, x);
     }
     void push_front(int x) {
-        code = shiftL(code);
-        code = add(code, 0, x);
+        shiftL(code);
+        add(code, 0, x);
         size++;
     }
-    void remove_back(int x) {
-        code = remove(code, --size, x);
+    void pop_back(int x) {
+        remove(code, --size, x);
     }
-    void remove_front(int x) {
-        code = remove(code, 0, x);
-        code = shiftR(code);
+    void pop_front(int x) {
+        remove(code, 0, x);
+        shiftR(code);
         size--;
     }
     void clear() {
         code = {}, size = 0;
     }
+    Hash operator +(const Hash &o) {
+        Hash ans;
+        ans.code = {plus(mul(code.first, Pb1[o.size]), o.code.first),
+                    plus(mul(code.second, Pb2[o.size]), o.code.second)};
+        ans.size = size + o.size;
+        return ans;
+    }
+    bool operator <(const Hash &o) const {
+        if(code == o.code) return size < o.size;
+        return code < o.code;
+    }
+    bool operator ==(const Hash &o) const {
+        return size == o.size && code == o.code;
+    }
+    bool operator !=(const Hash &o) const {
+        return size != o.size || code != o.code;
+    }
 };
+
+namespace Trie{
+    struct node{
+        int cnt = 0, cnt1 = 0;
+        node *mp[2];
+        node(){for(auto &i: mp)i=nullptr;}
+    };
+    node *root = new node();
+    void insert(node *x, int num, int i = 30) {
+        x->cnt++;
+        if(i == -1)
+            return void(x->cnt1++);
+        bool l = num & (1 << i);
+        if(!x->mp[l])
+            x->mp[l] = new node();
+        insert(x->mp[l], num, i - 1);
+    }
+    void pop(node *x, int num, int i = 30) {
+        x->cnt--;
+        if(i == -1)
+            return void(x->cnt1--);
+        bool l = num & (1 << i);
+        pop(x->mp[l], num, i - 1);
+    }
+    int ans(node *x, int num, int i = 30) {
+        if(i == -1 || !x)
+            return 0;
+        bool l = num & (1 << i);
+        l = !l;
+        if(x->mp[l] && x->mp[l]->cnt)
+            return (1 << i) * l + ans(x->mp[l], num, i - 1);
+        return (1 << i) * !l + ans(x->mp[!l], num, i - 1);
+    }
+}
+//using namespace Trie;
 
 void go() {
 
