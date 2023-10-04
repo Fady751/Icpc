@@ -31,10 +31,10 @@ namespace numberTheory {
     vector <T> fac;
     vector<int> sieve;
 
-    void buildFac(int numberOfFactorial){
-        fac.resize(numberOfFactorial + 1);
+    void buildFac(int n){
+        fac.resize(n + 1);
         fac[0] = 1;
-        for (int i = 1; i <= numberOfFactorial; i++)
+        for (int i = 1; i <= n; i++)
             fac[i] = T((__int128(fac[i - 1]) * i) % mod);
     }
     void buildSieve(int n){
@@ -111,7 +111,7 @@ class SegmentTree {
     vector<int> &arr;
     node *root = nullptr;
     int size;
-    void merge(node *x) {
+    static void merge(node *x) {
         x->v = x->l->v + x->r->v;
     }
     node *build(int lx, int rx) {
@@ -167,7 +167,7 @@ struct sparse{
     int Log, n;
     vector<vector<int>> table;
     vector<int> LOG;
-    int merge(int &x, int &y) {
+    static int merge(int &x, int &y) {
         return max(x, y);
     }
     explicit sparse(vector<int> &arr) : n((int)arr.size()), Log((int)log2(arr.size()) + 1) {
