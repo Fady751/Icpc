@@ -42,7 +42,7 @@ namespace numberTheory {
         for (int i = 2; i <= n; i++){
             if(!sieve[i]) {
                 sieve[i] = i;
-                for(int j = i * i; j <= n; j += i)
+                for(ll j = ll(i) * i; j <= n; j += i)
                     sieve[j] = i;
             }
         }
