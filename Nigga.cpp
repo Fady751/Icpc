@@ -280,35 +280,36 @@ namespace RollingHash {
 
 namespace Trie{
     struct node{
-        int cnt = 0, cnt1 = 0;
+        int cnt = 0;
         node *mp[2];
         node(){for(auto &i: mp)i=nullptr;}
     };
+    #define Log 30
     node *root = new node();
-    void insert(node *x, int num, int i = 30) {
+    void insert(int num, node *x = root, int i = Log) {
         x->cnt++;
         if(i == -1)
-            return void(x->cnt1++);
+            return;
         bool l = num & (1 << i);
         if(!x->mp[l])
             x->mp[l] = new node();
-        insert(x->mp[l], num, i - 1);
+        insert(num, x->mp[l], i - 1);
     }
-    void pop(node *x, int num, int i = 30) {
+    void pop(int num, node *x = root, int i = Log) {
         x->cnt--;
         if(i == -1)
-            return void(x->cnt1--);
+            return;
         bool l = num & (1 << i);
-        pop(x->mp[l], num, i - 1);
+        pop(num, x->mp[l], i - 1);
     }
-    int ans(node *x, int num, int i = 30) {
+    int ans(int num, node *x = root, int i = Log) {
         if(i == -1 || !x)
             return 0;
-        bool l = num & (1 << i);
-        l = !l;
+        bool l = !(num & (1 << i));
+
         if(x->mp[l] && x->mp[l]->cnt)
-            return (1 << i) * l + ans(x->mp[l], num, i - 1);
-        return (1 << i) * !l + ans(x->mp[!l], num, i - 1);
+            return (1 << i) * l + ans(num, x->mp[l], i - 1);
+        return (1 << i) * !l + ans(num, x->mp[!l], i - 1);
     }
 }
 //using namespace Trie;
