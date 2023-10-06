@@ -1,6 +1,7 @@
 #include <bits/stdc++.h>
 #include <ext/pb_ds/assoc_container.hpp>
 #include <ext/pb_ds/tree_policy.hpp>
+#include <utility>
 #define Nigga_ ios::sync_with_stdio(false), cin.tie(0), cout.tie(0);
 #define all(x) x.begin(), x.end()
 //#define int long long
@@ -202,56 +203,45 @@ namespace RollingHash {
             Pb2[i] = int(1LL * Pb2[i - 1] * b2 % mod);
         }
     }
-    int mul(int &x, int &y) {
-        return int(1LL * x * y % mod);
-    }
-    int plus(int x, int y) {
-        return int((0LL + x + y + mod) % mod);
-    }
-    void shiftL(pi &codex, int by = 1) {
-        codex = {mul(codex.first, Pb1[by]), mul(codex.second, Pb2[by])};
-    }
-    void shiftR(pi &codex) {
-        codex = {mul(codex.first, b1I), mul(codex.second, b2I)};
-    }
-    void add(pi &codex, int at, int &val) {
-        codex = {plus(mul(val, Pb1[at]), codex.first),
-                 plus(mul(val, Pb2[at]), codex.second)};
-    }
-    void remove(pi &codex, int at, int &val) {
-        codex = {plus(codex.first, -mul(Pb1[at], val)),
-                 plus(codex.second, -mul(Pb2[at], val))};
-    }
     class Hash {
-        pi code{};
-        int size{};
+    public:
+        pi code;
+        int size;
+        explicit Hash(pi x = {}, int sz = {}) : code(std::move(x)), size(sz) { }
 
         void push_back(int x) {
-            add(code, size++, x);
+            code.first = int((code.first + 1LL * Pb1[size] * x) % mod);
+            code.second = int((code.second + 1LL * Pb2[size++] * x) % mod);
         }
         void push_front(int x) {
-            shiftL(code);
-            add(code, 0, x);
+            code.first = int((1LL * code.first * b1 + x) % mod);
+            code.second = int((1LL * code.second * b2 + x) % mod);
             size++;
         }
         void pop_back(int x) {
-            remove(code, --size, x);
+            code.first = int((code.first - 1LL * Pb1[--size] * x % mod + mod) % mod);
+            code.second = int((code.second - 1LL * Pb2[size] * x % mod + mod) % mod);
         }
         void pop_front(int x) {
-            remove(code, 0, x);
-            shiftR(code);
+            code.first = int((1LL * (code.first - x + mod) * b1I) % mod);
+            code.second = int((1LL *(code.second - x + mod) * b2I) % mod);
             size--;
         }
         void clear() {
             code = {}, size = 0;
         }
 
-        Hash operator+(const Hash &o) {
-            Hash ans;
-            ans.code = {plus(mul(code.first, Pb1[o.size]), o.code.first),
-                        plus(mul(code.second, Pb2[o.size]), o.code.second)};
-            ans.size = size + o.size;
-            return ans;
+        Hash operator+(const Hash &o) const {//based on push_front (... 2 1 0) + (... 2 1 0) => "hell" + "o" = "hello"
+            return Hash({int((1LL * code.first * Pb1[o.size] + o.code.first) % mod),
+                         int((1LL * code.second * Pb2[o.size] + o.code.second) % mod)}
+                    , size + o.size);
+        }
+        Hash operator-(const Hash &o) const {//based on push_front (... 3 2 1 0) - (... 2 1 0) => "hello" - "hell" = "o"
+            assert(size >= o.size);
+            int m = size - o.size;
+            return Hash({int((code.first - 1LL * o.code.first * Pb1[m] % mod + mod) % mod),
+                         int((code.second - 1LL * o.code.second * Pb2[m] % mod + mod) % mod)}
+                    , m);
         }
         bool operator<(const Hash &o) const {
             if (code == o.code) return size < o.size;
@@ -264,6 +254,27 @@ namespace RollingHash {
             return size != o.size || code != o.code;
         }
     };
+    template<typename T>
+    Hash getHash(T &s) {
+        Hash c;
+        for(auto &i : s)
+            c.push_front(i);
+        return c;
+    }
+    template<typename T>
+    vector<Hash> getPreHash(T &s) {
+        vector<Hash> arr;
+        arr.reserve(s.size());
+        Hash c;
+        for(auto &i : s) {
+            c.push_front(i);
+            arr.push_back(c);
+        }
+        return arr;
+    }
+    Hash getRange(vector<Hash> &pre, int l, int r) {
+        return l == 0? pre[r]: pre[r] - pre[l - 1];
+    }
 }
 //using namespace RollingHash;
 
