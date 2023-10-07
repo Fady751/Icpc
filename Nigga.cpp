@@ -327,5 +327,6 @@ int32_t main() {
     while(test-- > 0) {
         solve();
     }
+    cerr << clock() / 1000.0 << " Secs";
     return 0;
 }
