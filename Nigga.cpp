@@ -62,7 +62,7 @@ namespace numberTheory {
     T fastPower(T base, T power) {
         if (power < 0) return 0;
         if (power == 0) return 1;
-        T temp = fastPower(base, power / 2);
+        T temp = fastPower(base, power >> 1);
         return T((__int128(temp) * temp * (power & 1? base: 1)) % mod);
     }
 
