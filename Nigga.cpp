@@ -284,8 +284,8 @@ namespace Trie{
         node *mp[2];
         node(){for(auto &i: mp)i=nullptr;}
     };
-    #define Log 30
-    node *root = new node();
+#define Log 30
+    node *root = nullptr;
     void insert(int num, node *x = root, int i = Log) {
         x->cnt++;
         if(i == -1)
@@ -295,21 +295,29 @@ namespace Trie{
             x->mp[l] = new node();
         insert(num, x->mp[l], i - 1);
     }
-    void pop(int num, node *x = root, int i = Log) {
-        x->cnt--;
-        if(i == -1)
-            return;
-        bool l = num & (1 << i);
-        pop(num, x->mp[l], i - 1);
-    }
-    int ans(int num, node *x = root, int i = Log) {
+    int Max(int num, node *x = root, int i = Log) {
         if(i == -1 || !x)
             return 0;
         bool l = !(num & (1 << i));
 
         if(x->mp[l] && x->mp[l]->cnt)
-            return (1 << i) * l + ans(num, x->mp[l], i - 1);
-        return (1 << i) * !l + ans(num, x->mp[!l], i - 1);
+            return (1 << i) * l + Max(num, x->mp[l], i - 1);
+        return (1 << i) * !l + Max(num, x->mp[!l], i - 1);
+    }
+    int Min(int num, node *x = root, int i = Log) {
+        if(i == -1 || !x)
+            return 0;
+        bool l = (num & (1 << i));
+
+        if(x->mp[l] && x->mp[l]->cnt)
+            return (1 << i) * l + Min(num, x->mp[l], i - 1);
+        return (1 << i) * !l + Min(num, x->mp[!l], i - 1);
+    }
+    void clear(node *x = root) {
+        if(!x) return;
+        for(auto &i : x->mp)
+            clear(i);
+        delete x;
     }
 }
 //using namespace Trie;
