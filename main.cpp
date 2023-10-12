@@ -26,31 +26,28 @@ void Uwu() {
 
     cin >> q;
     while(q--) {
-        cin >> x >> y;
-        ll l = 1, r = abs((int)sqrt(y) + 1);
-        if(r < l)
-            l = -1, swap(l, r);
-        ll xx = x, yy = y;
-        x = abs(x);
-        y = abs(y);
-        while (r > l + 1) {
-            ll m = (r + l) >> 1;
-            if (y / m + (yy < 0? -m: m) < x)
-                r = m;
+        cin >> x >> y;/*
+        bool f = x < 0;
+        x = ans(x);*/
+        ll l = -1e9, r = 1e9;
+        while(r > l + 1) {
+        	ll m = (l + r) >> 1;
+        	ll mm = m + 1;
+        	//if(mm == r) mm--;
+        	if(abs(m * x - m * m - y) >= abs(mm * x - mm * mm - y))
+        	     l = mm;
             else
-                l = m;
-
+            	r = m;
         }
-        r = y / l;
-        if(xx < 0)
-            l = -l, r = -r;
-        x = xx;
-        if(y % l != 0 || r + l != x || mp.find(r) == mp.end() || mp.find(l) == mp.end())
-            cout << "0 ";
-        else if(l == r)
-            cout << 1LL * mp[l] * (mp[l] - 1) / 2 << ' ';
+        ll a = l, b = x - l;
+	if(a * b != y)
+	    a = r, b = x - r;
+        if(a * b != y || mp.find(a) == mp.end() || mp.find(b) == mp.end())
+        	cout << "0 ";
+        else if(a == b)
+        	cout << 1LL * mp[a] * (mp[a] - 1) / 2 << " ";
         else
-            cout << 1LL * mp[l] * mp[r] << ' ';
+        	cout << 1LL * mp[a] * mp[b] << ' ';
     }
     cout << '\n';
 }
