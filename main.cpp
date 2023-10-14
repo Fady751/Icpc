@@ -11,7 +11,7 @@ void Uwu() {
 int32_t main() {
     notToday
     int tt = 1;
-    cin >> tt;
+//    cin >> tt;
     for (int test = 1; test <= tt; ++test) {
         Uwu();
     }

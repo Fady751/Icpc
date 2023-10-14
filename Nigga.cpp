@@ -27,16 +27,16 @@ using ordered_multiset = ordered_multimap<K, null_type, Comp>;
 template<typename T> using min_queue = priority_queue<T, vector<T>, greater<>>;
 
 namespace numberTheory {
-    using T = int;
-    T mod = 1e9 + 7;
-    vector <T> fac;
+    using Type = int;
+    Type mod = 1e9 + 7;
+    vector <Type> fac;
     vector<int> sieve;
 
     void buildFac(int n){
         fac.resize(n + 1);
         fac[0] = 1;
         for (int i = 1; i <= n; i++)
-            fac[i] = T((__int128(fac[i - 1]) * i) % mod);
+            fac[i] = Type((__int128(fac[i - 1]) * i) % mod);
     }
     void buildSieve(int n){
         sieve.resize(n + 1);
@@ -59,23 +59,23 @@ namespace numberTheory {
         return true;
     }
 
-    T fastPower(T base, T power) {
+    Type fastPower(Type base, Type power) {
         if (power < 0) return 0;
         if (power == 0) return 1;
-        T temp = fastPower(base, power >> 1);
-        return T((__int128(temp) * temp * (power & 1? base: 1)) % mod);
+        Type temp = fastPower(base, power >> 1);
+        return Type((__int128(temp) * temp * (power & 1? base: 1)) % mod);
     }
 
-    void moveOneStep(T &a, T &b, T q) {
-        T next = a - b * q;
+    void moveOneStep(Type &a, Type &b, Type q) {
+        Type next = a - b * q;
         a = b;
         b = next;
     }
 
-    T eGcd(T r0, T r1, T &x0, T &y0) {
-        T x1 = y0 = 0, y1 = x0 = 1;
+    Type eGcd(Type r0, Type r1, Type &x0, Type &y0) {
+        Type x1 = y0 = 0, y1 = x0 = 1;
         while (r1 > 0) {
-            T q = r0 / r1;
+            Type q = r0 / r1;
             moveOneStep(r0, r1, q);
             moveOneStep(x0, x1, q);
             moveOneStep(y0, y1, q);
@@ -83,20 +83,20 @@ namespace numberTheory {
         return r0;
     }
 
-    T modularInverse(T num) {
-        T x, y, g = eGcd(num, mod, x, y);
+    Type modularInverse(Type num) {
+        Type x, y, g = eGcd(num, mod, x, y);
         assert(g == 1);
         return (x + mod) % mod;
     }
 
-    T nCr(T n, T r) {
+    Type nCr(Type n, Type r) {
         if (r > n) return 0;
-        return T((__int128(fac[n]) * modularInverse(T((__int128(fac[n - r]) * fac[r]) % mod))) % mod);
+        return Type((__int128(fac[n]) * modularInverse(Type((__int128(fac[n - r]) * fac[r]) % mod))) % mod);
     }
 
-    T nPr(T n, T r) {
+    Type nPr(Type n, Type r) {
         if (r > n) return 0;
-        return T((__int128(fac[n]) * modularInverse(fac[n - r])) % mod);
+        return Type((__int128(fac[n]) * modularInverse(fac[n - r])) % mod);
     }
 }
 //using namespace numberTheory;
@@ -224,7 +224,7 @@ namespace RollingHash {
         }
         void pop_front(int x) {
             code.first = int((1LL * (code.first - x + mod) * b1I) % mod);
-            code.second = int((1LL *(code.second - x + mod) * b2I) % mod);
+            code.second = int((1LL * (code.second - x + mod) * b2I) % mod);
             size--;
         }
         void clear() {
@@ -284,7 +284,7 @@ namespace Trie{
         node *mp[2];
         node(){for(auto &i: mp)i=nullptr;}
     };
-#define Log 30
+    #define Log 30
     node *root = nullptr;
     void insert(int num, node *x = root, int i = Log) {
         x->cnt++;
