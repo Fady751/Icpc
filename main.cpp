@@ -15,6 +15,6 @@ int32_t main() {
     for (int test = 1; test <= tt; ++test) {
         Uwu();
     }
-    cerr << clock() / 1000.0 << " Secs";
+//    cerr << clock() / 1000.0 << " Secs";
     return 0;
 }

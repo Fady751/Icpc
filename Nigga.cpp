@@ -98,69 +98,93 @@ namespace numberTheory {
         if (r > n) return 0;
         return Type((__int128(fac[n]) * modularInverse(fac[n - r])) % mod);
     }
+    template<typename T>
+    inline T lowBit(T x) {return x&-x;}
 }
 //using namespace numberTheory;
 
+template<class T = int>
 class SegmentTree {
     struct node {
         node *l, *r;
-        ll v;
+        ll v, E = 0;
         explicit node(ll v = {}, node *l = nullptr, node *r = nullptr)
                 : v(v), r(r), l(l) {
+            if(l) merge(this);
         }
     };
-    vector<int> &arr;
     node *root = nullptr;
     int size;
-    static void merge(node *x) {
+    inline static void merge(node *x) {
         x->v = x->l->v + x->r->v;
     }
+    inline static ll merge(ll v1, ll v2) {
+        return v1 + v2;
+    }
+    inline static void edit(node *x, int &lx, int &rx) {
+        if(x->E) {
+            if(x->l) x->l->E += x->E;
+            if(x->r) x->r->E += x->E;
+            x->v += x->E * (rx - lx + 1);
+            x->E = 0;
+        }
+    }
     node *build(int lx, int rx) {
-        if(lx == rx)
-            return new node(arr[lx]);
-
+        if(lx == rx) return new node;
         int m = (lx + rx) >> 1;
-        node *l = build(lx, m),
-                *r = build(m + 1, rx),
-                *x = new node({}, l, r);
-        merge(x);
-        return x;
+        return new node({}, build(lx, m), build(m + 1, rx));
+    }
+    node *build(int lx, int rx, vector<T> &arr) {
+        if(lx == rx) return new node(arr[lx]);
+        int m = (lx + rx) >> 1;
+        return new node({}, build(lx, m, arr), build(m + 1, rx, arr));
     }
     ll get(node *x, int lx, int rx, int l, int r) {
-        if(lx > r || l > rx)
-            return 0;
-        if(lx >= l && rx <= r)
-            return x->v;
+        edit(x, lx, rx);
+        if(lx > r || l > rx) return 0;
+        if(lx >= l && rx <= r) return x->v;
         int m = (lx + rx) >> 1;
-        return get(x->l, lx, m, l, r) + get(x->r, m + 1, rx, l, r);
+        return merge(get(x->l, lx, m, l, r), get(x->r, m + 1, rx, l, r));
     }
-    void set(node *x, int lx, int rx, int i) {
-        if(lx == rx)
-            return void(x->v = arr[lx]);
+    void set(node *x, int lx, int rx, int i, ll val) {
+        edit(x, lx, rx);
+        if(lx == rx) return void(x->v = val);
         int m = (lx + rx) >> 1;
-        i <= m? set(x->l, lx, m, i): set(x->r, m + 1, rx, i);
+        i <= m? set(x->l, lx, m, i, val): set(x->r, m + 1, rx, i, val);
+        merge(x);
+    }
+    void setRange(node *x, int lx, int rx, int l, int r, ll val) {
+        edit(x, lx, rx);
+        if(lx > r || l > rx) return;
+        if(lx >= l && rx <= r) return x->E = val, edit(x, lx, rx);
+        int m = (lx + rx) >> 1;
+        setRange(x->l, lx, m, l, r, val), setRange(x->r, m + 1, rx, l, r, val);
         merge(x);
     }
     void del(node *x) {
         if(x){
-            del(x->l);
-            del(x->r);
+            del(x->l), del(x->r);
             delete x;
         }
     }
-public://based index 1
-    explicit SegmentTree(vector<int> &arr) : size((int)arr.size() - 1), arr(arr) {
-        root = build(1, size);
+public://based index 0
+    explicit SegmentTree(int n) : size(n) {
+        root = build(0, size);
+    }
+    explicit SegmentTree(vector<T> &arr) : size(arr.size() - 1) {
+        root = build(0, size, arr);
     }
     ~SegmentTree(){
         del(root);
     }
-    void set(int i, int v) {
-        arr[i] = v;
-        set(root, 1, size, i);
+    void set(int i, ll v) {
+        set(root, 0, size, i, v);
     }
-    ll ans(int l, int r) {
-        return get(root, 1, size, l, r);
+    ll getRange(int l, int r) {
+        return get(root, 0, size, l, r);
+    }
+    void plusRange(int l, int r, ll val) {
+        setRange(root, 0, size, l, r, val);
     }
 };
 
