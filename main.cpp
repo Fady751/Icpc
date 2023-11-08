@@ -4,16 +4,16 @@
 using ll = long long;
 using namespace std;
 
-void Uwu() {
+void S() {
 
 }
 
 int32_t main() {
     notToday
-    int tt = 1;
-//    cin >> tt;
-    for (int test = 1; test <= tt; ++test) {
-        Uwu();
+    int tc = 1;
+    cin >> tc;
+    for (int test = 1; test <= tc; ++test) {
+        S();
     }
 //    cerr << clock() / 1000.0 << " Secs";
     return 0;
