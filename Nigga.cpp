@@ -362,7 +362,6 @@ struct BIT { //1-based
     }
 
     int query(int i) {
-        assert(i > 0);
         int sum = 0;
         while (i > 0) {
             sum += tree[i];
