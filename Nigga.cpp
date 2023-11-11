@@ -354,6 +354,7 @@ struct BIT { //1-based
     }
 
     void update(int i, int val) {
+        assert(i > 0);
         while (i < tree.size()) {
             tree[i] += val;
             i += (i & -i);
@@ -361,6 +362,7 @@ struct BIT { //1-based
     }
 
     int query(int i) {
+        assert(i > 0);
         int sum = 0;
         while (i > 0) {
             sum += tree[i];
