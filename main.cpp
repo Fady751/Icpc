@@ -11,7 +11,7 @@ void T() {
 int32_t main() {
     notToday
     int tc = 1;
-    cin >> tc;
+//    cin >> tc;
     for (int test = 1; test <= tc; ++test) {
         T();
     }

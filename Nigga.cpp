@@ -347,6 +347,33 @@ namespace Trie{
 }
 //using namespace Trie;
 
+struct BIT { //1-based
+    vector<int> tree;
+    explicit BIT(int size = 1e6 + 1) {
+        tree.resize(size + 1);
+    }
+
+    void update(int i, int val) {
+        while (i < tree.size()) {
+            tree[i] += val;
+            i += (i & -i);
+        }
+    }
+
+    int query(int i) {
+        int sum = 0;
+        while (i > 0) {
+            sum += tree[i];
+            i -= (i & -i);
+        }
+        return sum;
+    }
+
+    int rangeQuery(int l, int r) {
+        return query(r) - query(l - 1);
+    }
+};
+
 void solve() {
 
 }
