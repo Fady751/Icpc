@@ -349,7 +349,7 @@ namespace Trie{
 
 struct BIT { //1-based
     vector<int> tree;
-    explicit BIT(int size = 1e6 + 1) {
+    explicit BIT(int size = 1e6) {
         tree.resize(size + 1);
     }
 
