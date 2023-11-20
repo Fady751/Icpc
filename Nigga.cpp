@@ -192,16 +192,12 @@ template<typename T>
 struct sparse{
     int Log, n;
     vector<vector<T>> table;
-    vector<int> LOG;
     static T merge(T &x, T &y) {
         return __gcd(x, y);
     }
-    explicit sparse(vector<T> &arr) : n((int)arr.size()), Log((int)log2(arr.size()) + 1) {
+    explicit sparse(vector<T> &arr) : n((int)arr.size()), Log(__lg(arr.size()) + 1) {
         table.resize(Log, vector<T>(n));
         table[0] = arr;
-        LOG.resize(n + 1);
-        for(int i = 2; i <= n; i++)
-            LOG[i] = LOG[i >> 1] + 1;
         for(int l = 1; l < Log; l++) {
             for(int i = 0; i + (1 << (l - 1)) < n; i++) {
                 table[l][i] = merge(table[l - 1][i], table[l - 1][i + (1 << (l - 1))]);
@@ -210,8 +206,8 @@ struct sparse{
     }
     T ans(int l, int r) {
         if(l > r)
-            return 0;
-        int len = LOG[r - l + 1];
+            return {};
+        int len = __lg(r - l + 1);
         return merge(table[len][l], table[len][r - (1 << len) + 1]);
     }
 };

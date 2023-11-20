@@ -1,6 +1,6 @@
 #include <bits/stdc++.h>
 #define notToday ios::sync_with_stdio(false), cin.tie(nullptr), cout.tie(nullptr);
-#define all(x) x.begin(), x.end()
+//#define all(x) x.begin(), x.end()
 using ll = long long;
 using namespace std;
 
