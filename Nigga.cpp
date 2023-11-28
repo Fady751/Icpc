@@ -27,28 +27,29 @@ using ordered_multiset = ordered_multimap<K, null_type, Comp>;
 template<typename T> using min_queue = priority_queue<T, vector<T>, greater<>>;
 
 namespace numberTheory {
-    using Type = int;
-    Type mod = 1e9 + 7;
-    vector <Type> fac;
-    vector<int> sieve;
+    using type = int;
+    type mod = 1e9 + 7;
 
+    vector<type> fac;
     void buildFac(int n){
         fac.resize(n + 1);
         fac[0] = 1;
         for (int i = 1; i <= n; i++)
-            fac[i] = Type((__int128(fac[i - 1]) * i) % mod);
+            fac[i] = type((__int128(fac[i - 1]) * i) % mod);
     }
+
+    vector<int> sieve;
     void buildSieve(int n){
         sieve.resize(n + 1);
         for (int i = 2; i <= n; i++){
             if(!sieve[i]) {
                 sieve[i] = i;
-                for(ll j = ll(i) * i; j <= n; j += i)
+                for(ll j = ll(i) * i; j <= n; j += i) if(!sieve[j])
                     sieve[j] = i;
             }
         }
-
     }
+
     bool isPrime(ll num) {
         if(num < 2) return false;
         if(num < 4) return true;
@@ -59,23 +60,23 @@ namespace numberTheory {
         return true;
     }
 
-    Type fastPower(Type base, Type power) {
+    type fastPower(type base, type power, type m = mod) {
         if (power < 0) return 0;
         if (power == 0) return 1;
-        Type temp = fastPower(base, power >> 1);
-        return Type((__int128(temp) * temp * (power & 1? base: 1)) % mod);
+        type temp = fastPower(base, power >> 1);
+        return type((__int128(temp) * temp * (power & 1 ? base : 1)) % m);
     }
 
-    void moveOneStep(Type &a, Type &b, Type q) {
-        Type next = a - b * q;
+    void moveOneStep(type &a, type &b, type q) {
+        type next = a - b * q;
         a = b;
         b = next;
     }
 
-    Type eGcd(Type r0, Type r1, Type &x0, Type &y0) {
-        Type x1 = y0 = 0, y1 = x0 = 1;
+    type eGcd(type r0, type r1, type &x0, type &y0) {
+        type x1 = y0 = 0, y1 = x0 = 1;
         while (r1 > 0) {
-            Type q = r0 / r1;
+            type q = r0 / r1;
             moveOneStep(r0, r1, q);
             moveOneStep(x0, x1, q);
             moveOneStep(y0, y1, q);
@@ -83,20 +84,20 @@ namespace numberTheory {
         return r0;
     }
 
-    Type modularInverse(Type num) {
-        Type x, y, g = eGcd(num, mod, x, y);
+    type modularInverse(type num) {
+        type x, y, g = eGcd(num, mod, x, y);
         assert(g == 1);
         return (x + mod) % mod;
     }
 
-    Type nCr(Type n, Type r) {
+    type nCr(type n, type r) {
         if (r > n) return 0;
-        return Type((__int128(fac[n]) * modularInverse(Type((__int128(fac[n - r]) * fac[r]) % mod))) % mod);
+        return type((__int128(fac[n]) * modularInverse(type((__int128(fac[n - r]) * fac[r]) % mod))) % mod);
     }
 
-    Type nPr(Type n, Type r) {
+    type nPr(type n, type r) {
         if (r > n) return 0;
-        return Type((__int128(fac[n]) * modularInverse(fac[n - r])) % mod);
+        return type((__int128(fac[n]) * modularInverse(fac[n - r])) % mod);
     }
     template<typename T>
     inline T lowBit(T x) {return x&-x;}
@@ -113,7 +114,7 @@ class SegmentTree {
             if(l) merge(this);
         }
     };
-    node *root = nullptr;
+    node *root;
     int size;
     inline static void merge(node *x) {
         x->v = x->l->v + x->r->v;
@@ -265,8 +266,8 @@ namespace RollingHash {
                     , m);
         }
         bool operator<(const Hash &o) const {
-            if (code == o.code) return size < o.size;
-            return code < o.code;
+            if (size == o.size) return code < o.code;
+            return size < o.size;
         }
         bool operator==(const Hash &o) const {
             return size == o.size && code == o.code;
@@ -302,7 +303,7 @@ namespace RollingHash {
 namespace Trie{
     struct node{
         int cnt = 0;
-        node *mp[2];
+        node *mp[2]{};
         node(){for(auto &i: mp)i=nullptr;}
     };
     #define Log 30
