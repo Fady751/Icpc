@@ -63,7 +63,7 @@ namespace numberTheory {
     type fastPower(type base, type power, type m = mod) {
         if (power < 0) return 0;
         if (power == 0) return 1;
-        type temp = fastPower(base, power >> 1);
+        type temp = fastPower(base, power >> 1, m);
         return type((__int128(temp) * temp * (power & 1 ? base : 1)) % m);
     }
 
@@ -84,10 +84,10 @@ namespace numberTheory {
         return r0;
     }
 
-    type modularInverse(type num) {
-        type x, y, g = eGcd(num, mod, x, y);
+    type modularInverse(type num, type m = mod) {
+        type x, y, g = eGcd(num, m, x, y);
         assert(g == 1);
-        return (x + mod) % mod;
+        return (x + m) % m;
     }
 
     type nCr(type n, type r) {
