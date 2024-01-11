@@ -91,9 +91,14 @@ namespace numberTheory {
     }
 
     type modularInverse(type num, type m = mod) {
-        type x, y, g = eGcd(num, m, x, y);
-        assert(g == 1);
-        return (x + m) % m;
+        type x0 = 1, x1 = 0, q, t;
+        while(m) {
+            q = num / m;
+            num -= q * m, t = num, num = m, m = t;
+            x0 -= q * x1, t = x0, x0 = x1, x1 = t;
+        }
+        assert(num == 1);
+        return (x0 + mod) % mod;
     }
 
     type nCr(type n, type r) {
