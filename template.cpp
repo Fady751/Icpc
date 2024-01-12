@@ -13,6 +13,16 @@ const short dy[] = {0, -1, 1, 0, 1, -1, -1, 1};
 const char dc[] = {'U', 'L', 'R', 'D'};
 
 using namespace std;
+template<class U, typename T>
+U& operator >> (U &input, vector<T> &x){
+    x.clear();
+    T element;
+    while(input >> element) {
+        x.push_back(element);
+        if(input.peek() == '\n') break;
+    }
+    return input;
+}
 
 //---------------------------------------------------------------------------------
 #include <ext/pb_ds/assoc_container.hpp>
@@ -241,6 +251,11 @@ namespace RollingHash {
         pi code;
         int size;
         explicit Hash(pi x = {}, int sz = {}) : code(std::move(x)), size(sz) { }
+
+        template<class T>
+        Hash(const T s) : size(0) {
+            for(const auto x : s) push_front(x);
+        }
 
         void push_back(int x) {
             code.first = int((code.first + 1LL * Pb1[size] * x) % mod);
