@@ -44,14 +44,15 @@ template<typename T> using min_queue = priority_queue<T, vector<T>, greater<>>;
 
 namespace numberTheory {
     using type = int;
-    type mod = 1e9 + 7;
+    using cast = long long;
+    type mod = static_cast<type>(1e9) + 7;
 
     vector<type> fac;
     void buildFac(int n){
         fac.resize(n + 1);
         fac[0] = 1;
         for (int i = 1; i <= n; i++)
-            fac[i] = type((__int128(fac[i - 1]) * i) % mod);
+            fac[i] = static_cast<type>((static_cast<cast>(fac[i - 1]) * i) % mod);
     }
 
     vector<int> sieve;
@@ -80,7 +81,7 @@ namespace numberTheory {
         if (power < 0) return 0;
         if (power == 0) return 1;
         type temp = fastPower(base, power >> 1, m);
-        return type((__int128(temp) * temp * (power & 1 ? base : 1)) % m);
+        return static_cast<type>((static_cast<cast>(temp) * temp * (power & 1 ? base : 1)) % m);
     }
 
     void moveOneStep(type &a, type &b, type q) {
@@ -113,12 +114,12 @@ namespace numberTheory {
 
     type nCr(type n, type r) {
         if (r > n) return 0;
-        return type((__int128(fac[n]) * modularInverse(type((__int128(fac[n - r]) * fac[r]) % mod))) % mod);
+        return static_cast<type>((static_cast<cast>(fac[n]) * modularInverse(static_cast<type>((static_cast<cast>(fac[n - r]) * fac[r]) % mod))) % mod);
     }
 
     type nPr(type n, type r) {
         if (r > n) return 0;
-        return type((__int128(fac[n]) * modularInverse(fac[n - r])) % mod);
+        return static_cast<type>((static_cast<cast>(fac[n]) * modularInverse(fac[n - r])) % mod);
     }
     template<typename T>
     inline T lowBit(T x) {return x&-x;}
@@ -370,13 +371,14 @@ namespace Trie{
 }
 //using namespace Trie;
 
+template<class T = long long>
 struct BIT { //1-based
-    vector<int> tree;
+    vector<T> tree;
     explicit BIT(int size = 1e6) {
         tree.resize(size + 1);
     }
 
-    void update(int i, int val) {
+    void update(int i, T val) {
         assert(i > 0);
         while (i < tree.size()) {
             tree[i] += val;
@@ -384,8 +386,8 @@ struct BIT { //1-based
         }
     }
 
-    int query(int i) {
-        int sum = 0;
+    T query(int i) {
+        T sum = 0;
         while (i > 0) {
             sum += tree[i];
             i -= (i & -i);
@@ -393,94 +395,14 @@ struct BIT { //1-based
         return sum;
     }
 
-    int rangeQuery(int l, int r) {
+    T rangeQuery(int l, int r) {
         return query(r) - query(l - 1);
     }
 };
 
-class MLong {
-public:
-    using T = long long;
-    MLong() : num() { }
-    template<typename U>
-    MLong(const U x) : num{nrm(x)} { }
-
-    const T& operator()() const { return num; }
-    MLong operator -() const {return -num;}
-    MLong& operator --() {num = nrm(num - 1); return *this;}
-    MLong& operator ++() {num = nrm(num + 1); return *this;}
-    MLong operator --(int) {MLong res = *this; num = nrm(num - 1); return res;}
-    MLong operator ++(int) {MLong res = *this; num = nrm(num + 1); return res;}
-    bool operator <(const MLong s) const {return num < s.num;}
-    bool operator ==(const MLong s) const {return num == s.num;}
-    template<typename U> bool operator ==(const U s) const {return num == s;}
-    bool operator !=(const MLong s) const {return num != s.num;}
-    template<typename U> bool operator !=(const U s) const {return num != s;}
-
-    // +++
-    template<typename U> MLong operator + (const U s) const { return num + s; }
-    template<typename U> friend MLong operator + (const U f, const MLong &s) { return f + s.num; }
-    MLong operator + (const MLong s) const { return num + s.num; }
-    template<typename U>
-    MLong& operator += (const U s)  { num = nrm(num + s); return *this; }
-
-    // ---
-    template<typename U> MLong operator - (const U s) const { return num - s; }
-    template<typename U> friend MLong operator - (const U f, const MLong &s) { return f - s.num; }
-    MLong operator - (const MLong s) const { return num - s.num; }
-    template<typename U>
-    MLong& operator -= (const U s)  { num = nrm(num - s); return *this; }
-
-    // ***
-    template<typename U>
-    MLong operator * (const U s) const { return static_cast<__int128>(num) * static_cast<__int128>(s); }
-    template<typename U> friend MLong operator * (const U f, const MLong &s) { return static_cast<__int128>(s.num) * static_cast<__int128>(f); }
-    MLong operator * (const MLong s) const { return static_cast<__int128>(num) * static_cast<__int128>(s.num); }
-    template<typename U> MLong& operator *= (const U s) { num = nrm(static_cast<__int128>(num) * static_cast<__int128>(s)); return *this; }
-    MLong& operator *= (const MLong s) { num = nrm(static_cast<__int128>(num) * static_cast<__int128>(s.num)); return *this; }
-
-    // ///
-    template<typename U> MLong operator / (const U s) const { return static_cast<__int128>(num) * static_cast<__int128>(inverse(nrm(s))); }
-    template<typename U> friend MLong operator / (const U f, const MLong &s) { return static_cast<__int128>(inverse(s.num)) * static_cast<__int128>(f); }
-    MLong operator / (const MLong s) const { return static_cast<__int128>(num) * static_cast<__int128>(inverse(s.num)); }
-    template<typename U> MLong& operator /= (const U s) { return *this *= inverse(s); }
-    MLong& operator /= (const MLong s) { return *this *= inverse(s.num); }
-
-    //cout, cin
-    friend istream &operator>>(istream &is, MLong &x) {
-        is >> x.num;
-        x.num = nrm(x.num);
-        return is;
-    }
-    friend ostream &operator<<(ostream &os, MLong x) { return os << x.num; }
-private:
-    template<typename U>
-    inline static T nrm(U x) {
-        T v;
-        if(x >= mod && x < mod) v = static_cast<T>(x);
-        else v = static_cast<T>(x % mod);
-        if(v < 0) return v + mod;
-        return v;
-    }
-    inline static T inverse(T x, T m = mod) {
-        T x0 = 1, x1 = 0, q, t;
-        while(m) {
-            q = x / m;
-            x -= q * m, t = x, x = m, m = t;
-            x0 -= q * x1, t = x0, x0 = x1, x1 = t;
-        }
-        assert(x == 1);
-        return x0;
-    }
-    static T mod;
-    T num;
-};
-long long MLong::mod = 1E18 + 9;
-
-
+template<class T, class cast>
 class Mint {
 public:
-    using T = int;
     Mint() : num() { }
     template<typename U>
     Mint(const U x) : num{nrm(x)} { }
@@ -491,40 +413,52 @@ public:
     Mint& operator ++() {num = nrm(num + 1); return *this;}
     Mint operator --(int) {Mint res = *this; num = nrm(num - 1); return res;}
     Mint operator ++(int) {Mint res = *this; num = nrm(num + 1); return res;}
-    bool operator <(const Mint s) const {return num < s.num;}
-    bool operator ==(const Mint s) const {return num == s.num;}
-    template<typename U> bool operator ==(const U s) const {return num == s;}
-    bool operator !=(const Mint s) const {return num != s.num;}
-    template<typename U> bool operator !=(const U s) const {return num != s;}
+    bool operator <(const Mint &s) const {return num < s.num;}
+    bool operator ==(const Mint &s) const {return num == s.num;}
+    template<typename U> bool operator ==(const U s) const {return num == nrm(s);}
+    template<typename U> friend bool operator ==(const U s, const Mint &f) {return f.num == nrm(s);}
+    bool operator !=(const Mint &s) const {return num != s.num;}
+    template<typename U> bool operator !=(const U s) const {return num != nrm(s);}
+    template<typename U> friend bool operator !=(const U s, const Mint &f) {return f.num != nrm(s);}
 
     // +++
     template<typename U> Mint operator + (const U s) const { return num + s; }
     template<typename U> friend Mint operator + (const U f, const Mint &s) { return f + s.num; }
-    Mint operator + (const Mint s) const { return num + s.num; }
+    Mint operator + (const Mint &s) const { return num + s.num; }
     template<typename U>
     Mint& operator += (const U s)  { num = nrm(num + s); return *this; }
+    Mint& operator += (const Mint &s)  { num = nrm(num + s.num); return *this; }
+    template<typename U>
+    friend U& operator += (U &s, const Mint &f)  { s = nrm(f.num + s); return s; }
 
     // ---
     template<typename U> Mint operator - (const U s) const { return num - s; }
     template<typename U> friend Mint operator - (const U f, const Mint &s) { return f - s.num; }
-    Mint operator - (const Mint s) const { return num - s.num; }
+    Mint operator - (const Mint &s) const { return num - s.num; }
     template<typename U>
     Mint& operator -= (const U s)  { num = nrm(num - s); return *this; }
+    Mint& operator -= (const Mint &s)  { num = nrm(num - s.num); return *this; }
+    template<typename U>
+    friend U& operator -= (U &s, const Mint &f)  { s = nrm(s - f.num); return s; }
 
     // ***
     template<typename U>
-    Mint operator * (const U s) const { return static_cast<long long>(num) * static_cast<long long>(s); }
-    template<typename U> friend Mint operator * (const U f, const Mint &s) { return static_cast<long long>(s.num) * static_cast<long long>(f); }
-    Mint operator * (const Mint s) const { return static_cast<long long>(num) * static_cast<long long>(s.num); }
-    template<typename U> Mint& operator *= (const U s) { num = nrm(static_cast<long long>(num) * static_cast<long long>(s)); return *this; }
-    Mint& operator *= (const Mint s) { num = nrm(static_cast<long long>(num) * static_cast<long long>(s.num)); return *this; }
+    Mint operator * (const U s) const { return static_cast<cast>(num) * static_cast<cast>(s); }
+    template<typename U> friend Mint operator * (const U f, const Mint &s) { return static_cast<cast>(s.num) * static_cast<cast>(f); }
+    Mint operator * (const Mint &s) const { return static_cast<cast>(num) * static_cast<cast>(s.num); }
+    template<typename U> Mint& operator *= (const U s) { num = nrm(static_cast<cast>(num) * static_cast<cast>(s)); return *this; }
+    Mint& operator *= (const Mint &s) { num = nrm(static_cast<cast>(num) * static_cast<cast>(s.num)); return *this; }
+    template<typename U>
+    friend U& operator *= (U &s, const Mint &f)  { s = nrm(static_cast<cast>(s) * static_cast<cast>(f.num)); return s; }
 
     // ///
-    template<typename U> Mint operator / (const U s) const { return static_cast<long long>(num) * static_cast<long long>(inverse(nrm(s))); }
-    template<typename U> friend Mint operator / (const U f, const Mint &s) { return static_cast<long long>(inverse(s.num)) * static_cast<long long>(f); }
-    Mint operator / (const Mint s) const { return static_cast<long long>(num) * static_cast<long long>(inverse(s.num)); }
+    template<typename U> Mint operator / (const U s) const { return static_cast<cast>(num) * static_cast<cast>(inverse(nrm(s))); }
+    template<typename U> friend Mint operator / (const U f, const Mint &s) { return static_cast<cast>(inverse(s.num)) * static_cast<cast>(f); }
+    Mint operator / (const Mint &s) const { return static_cast<cast>(num) * static_cast<cast>(inverse(s.num)); }
     template<typename U> Mint& operator /= (const U s) { return *this *= inverse(s); }
-    Mint& operator /= (const Mint s) { return *this *= inverse(s.num); }
+    Mint& operator /= (const Mint &s) { return *this *= inverse(s.num); }
+    template<typename U>
+    friend U& operator /= (U &s, const Mint &f)  { s = nrm(static_cast<cast>(s) * static_cast<cast>(inverse(f.num))); return s; }
 
     //cout, cin
     friend istream &operator>>(istream &is, Mint &x) {
@@ -532,7 +466,7 @@ public:
         x.num = nrm(x.num);
         return is;
     }
-    friend ostream &operator<<(ostream &os, Mint x) { return os << x.num; }
+    friend ostream &operator<<(ostream &os, const Mint &x) { return os << x.num; }
 private:
     template<typename U>
     inline static T nrm(U x) {
@@ -555,7 +489,10 @@ private:
     static T mod;
     T num;
 };
-int Mint::mod = 1e9 + 7;
+
+//template<> long long Mint<long long, __int128>::mod = static_cast<long long>(1E18) + 9;
+template<> int Mint<int, long long>::mod = static_cast<int>(1E9) + 7;
+using Z = Mint<int, long long>;
 
 
 void solve() {
