@@ -471,7 +471,7 @@ private:
     template<typename U>
     inline static T nrm(U x) {
         T v;
-        if(x >= mod && x < mod) v = static_cast<T>(x);
+        if(x >= -mod && x < mod) v = static_cast<T>(x);
         else v = static_cast<T>(x % mod);
         if(v < 0) return v + mod;
         return v;
