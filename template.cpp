@@ -11,8 +11,8 @@ const ll INF = (1LL << 62) - 1;
 const short dx[] = {-1, 0, 0, 1, 1, -1, 1, -1};
 const short dy[] = {0, -1, 1, 0, 1, -1, -1, 1};
 const char dc[] = {'U', 'L', 'R', 'D'};
-
 using namespace std;
+
 template<class U, typename T>
 U& operator >> (U &input, vector<T> &x){
     x.clear();
@@ -405,7 +405,7 @@ class Mint {
 public:
     Mint() : num() { }
     template<typename U>
-    Mint(const U x) : num{nrm(x)} { }
+    Mint(const U &x) : num{nrm(x)} { }
 
     const T& operator()() const { return num; }
     Mint operator -() const {return -num;}
@@ -414,6 +414,7 @@ public:
     Mint operator --(int) {Mint res = *this; num = nrm(num - 1); return res;}
     Mint operator ++(int) {Mint res = *this; num = nrm(num + 1); return res;}
     bool operator <(const Mint &s) const {return num < s.num;}
+    template<class U> operator U() const { return static_cast<U>(num); }
     bool operator ==(const Mint &s) const {return num == s.num;}
     template<typename U> bool operator ==(const U s) const {return num == nrm(s);}
     template<typename U> friend bool operator ==(const U s, const Mint &f) {return f.num == nrm(s);}
@@ -467,7 +468,6 @@ public:
         return is;
     }
     friend ostream &operator<<(ostream &os, const Mint &x) { return os << x.num; }
-private:
     template<typename U>
     inline static T nrm(U x) {
         T v;
@@ -486,6 +486,13 @@ private:
         assert(x == 1);
         return x0;
     }
+    inline static T fastPower(T base, T power) {
+        if (power < 0) return 0;
+        if (power == 0) return 1;
+        T temp = fastPower(base, power >> 1);
+        return static_cast<T>((static_cast<cast>(temp) * static_cast<cast>(temp) * (power & 1 ? static_cast<cast>(base) : static_cast<cast>(1))) % mod);
+    }
+private:
     static T mod;
     T num;
 };
