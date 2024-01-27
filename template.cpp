@@ -444,22 +444,22 @@ public:
 
     // ***
     template<typename U>
-    Mint operator * (const U s) const { return static_cast<cast>(num) * static_cast<cast>(s); }
-    template<typename U> friend Mint operator * (const U f, const Mint &s) { return static_cast<cast>(s.num) * static_cast<cast>(f); }
+    Mint operator * (const U s) const { return static_cast<cast>(num) * static_cast<cast>(nrm(s)); }
+    template<typename U> friend Mint operator * (const U f, const Mint &s) { return static_cast<cast>(s.num) * static_cast<cast>(nrm(f)); }
     Mint operator * (const Mint &s) const { return static_cast<cast>(num) * static_cast<cast>(s.num); }
-    template<typename U> Mint& operator *= (const U s) { num = nrm(static_cast<cast>(num) * static_cast<cast>(s)); return *this; }
+    template<typename U> Mint& operator *= (const U s) { num = nrm(static_cast<cast>(num) * static_cast<cast>(nrm(s))); return *this; }
     Mint& operator *= (const Mint &s) { num = nrm(static_cast<cast>(num) * static_cast<cast>(s.num)); return *this; }
     template<typename U>
-    friend U& operator *= (U &s, const Mint &f)  { s = nrm(static_cast<cast>(s) * static_cast<cast>(f.num)); return s; }
+    friend U& operator *= (U &s, const Mint &f)  { s = nrm(static_cast<cast>(nrm(s)) * static_cast<cast>(f.num)); return s; }
 
     // ///
     template<typename U> Mint operator / (const U s) const { return static_cast<cast>(num) * static_cast<cast>(inverse(nrm(s))); }
-    template<typename U> friend Mint operator / (const U f, const Mint &s) { return static_cast<cast>(inverse(s.num)) * static_cast<cast>(f); }
+    template<typename U> friend Mint operator / (const U f, const Mint &s) { return static_cast<cast>(inverse(s.num)) * static_cast<cast>(nrm(f)); }
     Mint operator / (const Mint &s) const { return static_cast<cast>(num) * static_cast<cast>(inverse(s.num)); }
-    template<typename U> Mint& operator /= (const U s) { return *this *= inverse(s); }
+    template<typename U> Mint& operator /= (const U s) { return *this *= inverse(nrm(s)); }
     Mint& operator /= (const Mint &s) { return *this *= inverse(s.num); }
     template<typename U>
-    friend U& operator /= (U &s, const Mint &f)  { s = nrm(static_cast<cast>(s) * static_cast<cast>(inverse(f.num))); return s; }
+    friend U& operator /= (U &s, const Mint &f)  { s = nrm(static_cast<cast>(nrm(s)) * static_cast<cast>(inverse(f.num))); return s; }
 
     //cout, cin
     friend istream &operator>>(istream &is, Mint &x) {
