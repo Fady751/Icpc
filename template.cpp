@@ -126,8 +126,8 @@ namespace numberTheory {
 }
 //using namespace numberTheory;
 
-template<class T = ll, class U = int>
-class SegmentTree {
+template<class T = long long, class U = int>
+class SegTree {
     struct node {
         node *l, *r;
         T v{}, E{};
@@ -172,10 +172,10 @@ class SegmentTree {
     void set(node *x, int lx, int rx, int i, T val) {
         if(lx != rx) x->build();
         edit(x, lx, rx);
+        if (i < lx || i > rx) return;
         if(lx == rx) return void(x->v = val);
         int m = (lx + rx) >> 1;
-        i <= m? set(x->l, lx, m, i, val): set(x->r, m + 1, rx, i, val);
-        edit(x->l, lx, m), edit(x->r, m + 1, rx);
+        set(x->l, lx, m, i, val), set(x->r, m + 1, rx, i, val);
         merge(x);
     }
     void setRange(node *x, int lx, int rx, int l, int r, T val) {
@@ -194,12 +194,12 @@ class SegmentTree {
         }
     }
 public://based index 0
-    explicit SegmentTree(int n) : size(n), root(new node()) { }
+    explicit SegTree(int n) : size(n), root(new node()) { }
 
-    explicit SegmentTree(vector<U> &arr) : size(arr.size() - 1), root(new node()) {
+    explicit SegTree(vector<U> &arr) : size(arr.size() - 1), root(new node()) {
         build(root, 0, size, arr);
     }
-    ~SegmentTree(){
+    ~SegTree(){
         del(root);
     }
     void set(int i, T v) {
@@ -213,6 +213,104 @@ public://based index 0
     }
     void plusRange(int l, int r, T val) {
         setRange(root, 0, size, l, r, val);
+    }
+};
+
+template<class T = long long, class U = int>
+class SegmentTree {
+    struct type {
+        int l, r;
+        T v{}, E{};
+        explicit type() : l(0), r(0) { }
+    };
+    void create(int idx) {
+        if(!tree[idx].l){
+            tree[idx].l = tree.size();
+            tree.emplace_back();
+            tree[idx].r = tree.size();
+            tree.emplace_back();
+        }
+    }
+    vector<type> tree;
+    int size;
+
+    inline void merge(type &x) {
+        x.v = tree[x.l].v + tree[x.r].v;
+    }
+
+    inline T merge(const T &v1, const T &v2) {
+        return v1 + v2;
+    }
+
+    inline void edit(type &x, const int &lx, const int &rx) {
+        if (x.E) {
+            if (x.l) tree[x.l].E += x.E;
+            if (x.r) tree[x.r].E += x.E;
+            x.v += x.E * (rx - lx + 1);
+            x.E = 0;
+        }
+    }
+
+    void build(int idx, int lx, int rx, vector<U> &arr) {
+        tree[idx].l = tree[idx].r = 0;
+        if (lx == rx) return void(tree[idx].v = arr[lx]);
+        int m = (lx + rx) >> 1;
+        create(idx);
+        build(tree[idx].l, lx, m, arr);
+        build(tree[idx].r, m + 1, rx, arr);
+        merge(tree[idx]);
+    }
+
+    T get(int idx, int lx, int rx, int l, int r) {
+        if (lx != rx) create(idx);
+        edit(tree[idx], lx, rx);
+        if (lx > r || l > rx) return 0;
+        if (lx >= l && rx <= r) return tree[idx].v;
+        int m = (lx + rx) >> 1;
+        return merge(get(tree[idx].l, lx, m, l, r), get(tree[idx].r, m + 1, rx, l, r));
+    }
+
+    void set(int idx, int lx, int rx, int i, T val) {
+        if (lx != rx) create(idx);
+        edit(tree[idx], lx, rx);
+        if (i < lx || i > rx) return;
+        if (lx == rx) return void(tree[idx].v = val);
+        int m = (lx + rx) >> 1;
+        set(tree[idx].l, lx, m, i, val), set(tree[idx].r, m + 1, rx, i, val);
+        merge(tree[idx]);
+    }
+
+    void setRange(int idx, int lx, int rx, int l, int r, T val) {
+        if (lx != rx) create(idx);
+        edit(tree[idx], lx, rx);
+        if (lx > r || l > rx) return;
+        if (lx >= l && rx <= r) return tree[idx].E = val, edit(tree[idx], lx, rx);
+        int m = (lx + rx) >> 1;
+        setRange(tree[idx].l, lx, m, l, r, val), setRange(tree[idx].r, m + 1, rx, l, r, val);
+        merge(tree[idx]);
+    }
+
+public://based index 0
+    explicit SegmentTree(int n) : size(n), tree(2) { }
+
+    explicit SegmentTree(vector<U> &arr) : size(arr.size() - 1), tree(2) {
+        build(1, 0, size, arr);
+    }
+
+    void set(int i, T v) {
+        set(1, 0, size, i, v);
+    }
+
+    T get(int l, int r) {
+        return get(1, 0, size, l, r);
+    }
+
+    T operator[](int i) {
+        return get(1, 0, size, i, i);
+    }
+
+    void plusRange(int l, int r, T val) {
+        setRange(1, 0, size, l, r, val);
     }
 };
 
