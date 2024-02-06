@@ -405,6 +405,31 @@ struct BIT { //1-based
     }
 };
 
+class DSU {
+    vector<int> p;
+public: //1-based
+    explicit DSU(int _n) : p(_n + 1, -1) { }
+    int find(int i) {
+        return p[i] < 0? i: p[i] = find(p[i]);
+    }
+    bool merge(int u, int v) {
+        u = find(u);
+        v = find(v);
+        if(u == v)
+            return false;
+        if(p[u] < p[v]) swap(u, v);
+        p[v] += p[u];
+        p[u] = v;
+        return true;
+    }
+    int size(int i) {
+        return -p[find(i)];
+    }
+    bool same(int u, int v) {
+        return find(u) == find(v);
+    }
+};
+
 template<class T, class cast>
 class Mint {
 public:
