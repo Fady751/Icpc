@@ -11,6 +11,7 @@ const ll INF = (1LL << 62) - 1;
 const short dx[] = {-1, 0, 0, 1, 1, -1, 1, -1};
 const short dy[] = {0, -1, 1, 0, 1, -1, -1, 1};
 const char dc[] = {'U', 'L', 'R', 'D'};
+std::mt19937 rnd(time(nullptr)); //uniform_int_distribution<ll>(l, r)(rnd);
 using namespace std;
 
 template<class U, typename T>
