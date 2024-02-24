@@ -67,6 +67,19 @@ namespace numberTheory {
             }
         }
     }
+    vector<array<int, 2>> getFac(int _n) {
+        if(_n < 2) return {};
+        vector<array<int, 2>> _res;
+        int _p = sieve[_n];
+        while(_p > 1) {
+            int _c = 0;
+            while(_n % _p == 0)
+                _n /= _p, _c++;
+            _res.push_back({_p, _c});
+            _p = sieve[_n];
+        }
+        return _res;
+    }
 
     bool isPrime(ll num) {
         if(num < 2) return false;
