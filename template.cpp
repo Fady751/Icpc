@@ -80,6 +80,23 @@ namespace numberTheory {
         }
         return _res;
     }
+    void _getDivisors(const vector<array<int, 2>>& _fac, int index, int current, vector<int>& divisors) {
+        if (index == _fac.size()) {
+            divisors.push_back(current);
+            return;
+        }
+
+        for (int i = 0; i <= _fac[index][1]; ++i) {
+            _getDivisors(_fac, index + 1, current, divisors);
+            current *= _fac[index][0];
+        }
+    }
+
+    vector<int> getDivisors(const vector<array<int, 2>>& _fac) {
+        vector<int> divisors;
+        _getDivisors(_fac, 0, 1, divisors);
+        return divisors;
+    }
 
     bool isPrime(ll num) {
         if(num < 2) return false;
