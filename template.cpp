@@ -246,6 +246,78 @@ public://based index 0
     }
 };
 
+template<class info = int64_t, info defaultVal = info{}>
+class segmentTree {
+    struct node {
+        node *l, *r;
+        info v;
+        explicit node() : l(nullptr), r(nullptr), v(defaultVal) { }
+        void create() {
+            if(!l) l = new node(), r = new node();
+        }
+    } *root;
+    int size;
+    inline void _merge(node *x) {
+        x->v = merge(x->l->v, x->r->v);
+    }
+
+    template<class U>
+    void build(node *x, int lx, int rx, vector<U> &arr) {
+        if(lx == rx) return void(x->v = arr[lx]);
+        x->create();
+        int m = (lx + rx) >> 1;
+        build(x->l, lx, m, arr);
+        build(x->r, m + 1, rx, arr);
+        _merge(x);
+    }
+
+    info get(node *x, int lx, int rx, int l, int r) {
+        if(lx != rx) x->create();
+        if(lx > r || l > rx) return defaultVal;
+        if(lx >= l && rx <= r) return x->v;
+        int m = (lx + rx) >> 1;
+        return merge(get(x->l, lx, m, l, r), get(x->r, m + 1, rx, l, r));
+    }
+    void set(node *x, int lx, int rx, int i, info val) {
+        if(lx != rx) x->create();
+        if (i < lx || i > rx) return;
+        if(lx == rx) return void(x->v = val);
+        int m = (lx + rx) >> 1;
+        set(x->l, lx, m, i, val), set(x->r, m + 1, rx, i, val);
+        _merge(x);
+    }
+    void del(node *x) {
+        if(x){
+            del(x->l), del(x->r);
+            delete x;
+        }
+    }
+    function<info(const info &, const info &)> merge;
+public://0-based
+    explicit segmentTree(int n = 1000000000, function<info(const info &, const info &)> _merge = [](const info &v1, const info &v2){return v1 + v2;}) : size(n), root(new node()), merge(std::move(_merge)) { }
+
+    template<class U>
+    explicit segmentTree(vector<U> &arr, function<info(const info &, const info &)> _merge = [](const info &v1, const info &v2){return v1 + v2;}) : size(arr.size() - 1), root(new node()), merge(std::move(_merge)) {
+        build(root, 0, size, arr);
+    }
+    ~segmentTree(){
+        del(root);
+    }
+    void set(int i, info v) {
+        set(root, 0, size, i, v);
+    }
+    info get(int l, int r) {
+        return get(root, 0, size, l, r);
+    }
+    info operator[](int i) {
+        return get(root, 0, size, i, i);
+    }
+    void clear() {
+        del(root);
+        root = new node();
+    }
+};
+
 template<typename T>
 struct sparse{
     int Log, n;
