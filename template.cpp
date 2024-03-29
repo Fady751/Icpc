@@ -674,3 +674,10 @@ int32_t main() {
     cerr << clock() / 1000.0 << " Secs";
     return 0;
 }
+
+/*
+ sum of divisors
+ prime^power * prime2^power2 * ...
+
+ ((prime^(power + 1)) / (prime - 1)) * ((prime2^(power2 + 1)) / (prime2 - 1)) * ...
+ */
