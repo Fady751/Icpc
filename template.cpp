@@ -657,6 +657,71 @@ private:
 template<> int Mint<int, long long>::mod = static_cast<int>(1E9) + 7;
 using Z = Mint<int, long long>;
 
+class Decompo {
+public:
+    int n, z;
+    vector<vector<int>> freq;
+    vector<vector<int>> arr;
+    explicit Decompo(const vector<int> &_arr) : n(int(_arr.size())), z(int(sqrt(_arr.size())) + 1), arr(z), freq(z, vector<int>(n + 1)) {
+        for(int i = 0; i < n; i++) {
+            arr[i / z].push_back(_arr[i]);
+            freq[i / z][_arr[i]]++;
+        }
+    }
+    int erase(int j) {
+        for(int i = 0; i < z; i++) {
+            if(j < arr[i].size()) {
+                int x = arr[i][j];
+                for(j++; j < arr[i].size(); j++)
+                    arr[i][j - 1] = arr[i][j];
+                arr[i].pop_back();
+                freq[i][x]--;
+                return x;
+            }
+            j -= int(arr[i].size());
+        }
+        return -1;
+    }
+    void insert(int j, int x) {
+        for(int i = 0; i < z; i++) {
+            if(j <= arr[i].size()) {
+                arr[i].insert(arr[i].begin() + j, x);
+                freq[i][x]++;
+                return;
+            }
+            j -= int(arr[i].size());
+        }
+    }
+    int count(int x, int l, int r) {
+        int ans = 0;
+        int j = 0;
+        for(int b = 0; b < z; b++) {
+            if(j > r) break;
+            if(j >= l) {
+                if(j + arr[b].size() - 1 <= r) {
+                    ans += freq[b][x];
+                    j += int(arr[b].size());
+                }
+                else {
+                    for(int i = 0; i < arr[b].size() && j <= r; j++, i++) {
+                        ans += arr[b][i] == x;
+                    }
+                }
+            }
+            else if(j + arr[b].size() - 1 >= l) {
+                int i = l - j;
+                j = l;
+                for(; i < arr[b].size() && j <= r; j++, i++) {
+                    ans += arr[b][i] == x;
+                }
+            }
+            else {
+                j += int(arr[b].size());
+            }
+        }
+        return ans;
+    }
+};
 
 void solve() {
 
