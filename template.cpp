@@ -723,6 +723,55 @@ public:
     }
 };
 
+void moAlgo() {
+    int n, q;
+    cin >> n >> q;
+    int z = int(sqrt(n)) + 1;
+
+    vector<int> arr(n);
+    for(int i = 0; i < n; i++) {
+        cin >> arr[i];
+    }
+
+    vector<int> ans(q);
+    vector<array<int, 2>> qu(q);
+    vector<vector<int>> _mo(z);
+    for(int i = 0; i < q; i++) {
+        cin >> qu[i][0] >> qu[i][1];
+        _mo[qu[i][0] / z].push_back(i);
+    }
+
+    int curr = 0;
+    vector<int> freq(100001), f_f(100001);
+    auto add = [&](int i) {
+        f_f[++freq[arr[i]]]++;
+        curr = max(curr, freq[arr[i]]);
+    };
+    auto del = [&](int i) {
+        if(!--f_f[freq[arr[i]]] && curr == freq[arr[i]])
+            curr--;
+        --freq[arr[i]];
+    };
+
+    int c = 0, l = 0, r = -1;
+    for(auto &mo : _mo) {
+        if(mo.empty()) continue;
+        c? std::sort(mo.begin(), mo.end(), [&](int i, int j){return qu[i][1] < qu[j][1];}):
+        std::sort(mo.begin(), mo.end(), [&](int i, int j){return qu[i][1] > qu[j][1];});
+        c ^= 1;
+
+        for(int i : mo) {
+            while(r < qu[i][1]) add(++r);
+            while(l > qu[i][0]) add(--l);
+            while(r > qu[i][1]) del(r--);
+            while(l < qu[i][0]) del(l++);
+            ans[i] = curr;
+        }
+    }
+    for(int i : ans)
+        cout << i << '\n';
+}
+
 void solve() {
 
 }
