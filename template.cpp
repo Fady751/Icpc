@@ -772,6 +772,47 @@ void moAlgo() {
         cout << i << '\n';
 }
 
+class LCA {
+public:
+    int LOG, n;
+    vector<vector<int>> up;
+    vector<int> lvl;
+    explicit LCA(const vector<vector<int>> &g, int root = 0) : n(int(g.size())), LOG(__lg(int(g.size())) + 1), lvl(n), up(n, vector<int>(LOG, 0)) {
+        function<void(int)> dfs = [&](int u) -> void {
+            for(auto nxt : g[u]) if(nxt != up[u][0]) {
+                    up[nxt][0] = u;
+                    lvl[nxt] = lvl[u] + 1;
+                    for(int i = 1; i < LOG; i++) {
+                        up[nxt][i] = up[up[nxt][i - 1]][i - 1];
+                    }
+                    dfs(nxt);
+                }
+        };
+        dfs(root);
+    }
+    int get_k_ancestor(int v, int k) {
+        while(k > 0) {
+            v = up[v][__lg(k & -k)];
+            k ^= k & -k;
+        }
+        return v;
+    }
+    int lca(int a, int b) {
+        if(lvl[a] < lvl[b]) swap(a, b);
+        a = get_k_ancestor(a, lvl[a] - lvl[b]);
+        if(a == b)
+            return a;
+
+        for(int i = LOG - 1; i >= 0; i--) {
+            if(up[a][i] != up[b][i]) {
+                a = up[a][i];
+                b = up[b][i];
+            }
+        }
+        return up[a][0];
+    }
+};
+
 void solve() {
 
 }
