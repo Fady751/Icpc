@@ -813,6 +813,48 @@ public:
     }
 };
 
+template<int bits = 20>
+struct Basis {
+    int sz = 0;
+    array<int, bits> arr{};
+    void push(int x) {
+        if(sz == 20) return; //can make any number
+        int i;
+        while(x) {
+            i = __lg(x & -x);
+            if(!arr[i])
+                return sz++, void(arr[i] = x);
+            x ^= arr[i];
+        }
+    }
+    bool find(int x) {
+        if(sz == 20) return true;
+        int i;
+        while(x) {
+            i = __lg(x & -x);
+            if(arr[i])
+                x ^= arr[i];
+            else
+                return false;
+        }
+        return true;
+    }
+    void clear() {
+        if(!sz) return;
+        for(int i = 0; i < 20; i++) arr[i] = 0;
+        sz = 0;
+    }
+    void operator+=(const Basis o) {
+        if(sz == 20) return;
+        if(o.sz == 20) { *this = o; return; }
+        for(int i = 0; i < 20; i++) {
+            if(o.arr[i]) {
+                push(o.arr[i]);
+            }
+        }
+    }
+};
+
 void solve() {
 
 }
