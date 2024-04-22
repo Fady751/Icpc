@@ -818,7 +818,7 @@ struct Basis {
     int sz = 0;
     array<int, bits> arr{};
     void push(int x) {
-        if(sz == 20) return; //can make any number
+        if(sz == bits) return; //can make any number
         int i;
         while(x) {
             i = __lg(x & -x);
@@ -828,7 +828,7 @@ struct Basis {
         }
     }
     bool find(int x) {
-        if(sz == 20) return true;
+        if(sz == bits) return true;
         int i;
         while(x) {
             i = __lg(x & -x);
@@ -841,13 +841,13 @@ struct Basis {
     }
     void clear() {
         if(!sz) return;
-        for(int i = 0; i < 20; i++) arr[i] = 0;
+        for(int i = 0; i < bits; i++) arr[i] = 0;
         sz = 0;
     }
     void operator+=(const Basis o) {
-        if(sz == 20) return;
-        if(o.sz == 20) { *this = o; return; }
-        for(int i = 0; i < 20; i++) {
+        if(sz == bits) return;
+        if(o.sz == bits) { *this = o; return; }
+        for(int i = 0; i < bits; i++) {
             if(o.arr[i]) {
                 push(o.arr[i]);
             }
