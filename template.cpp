@@ -855,6 +855,69 @@ struct Basis {
     }
 };
 
+struct suffix {
+    int n;
+//    string s;
+    vector<int> p, c, lcp;
+
+    explicit suffix(vector<int> &s) : n(int(s.size()) + 1), p(n), c(n), lcp(n) {
+        s.push_back(0);
+        iota(p.begin(), p.end(), 0);
+        sort(p.begin(), p.end(), [&](int i, int j) {
+            return s[i] < s[j];
+        });
+        for (int i = 1; i < n; i++) c[p[i]] = c[p[i - 1]] + (s[p[i]] != s[p[i - 1]]);
+
+        int k = 0;
+        while ((1 << k) < n) {
+            vector<int> freq(n + 2);
+            for (int i = 0; i < n; i++)
+                p[i] = (p[i] - (1 << k) + n) % n, freq[c[i] + 1]++;
+            for (int i = 1; i <= n + 1; i++)
+                freq[i] += freq[i - 1];
+
+            vector<int> new_p(n);
+            for (int i = 0; i < n; i++)
+                new_p[freq[c[p[i]]]++] = p[i];
+            swap(p, new_p);
+
+            vector<int> new_c(n);
+            for (int i = 1; i < n; i++) {
+                new_c[p[i]] = new_c[p[i - 1]] +
+                              (c[p[i]] != c[p[i - 1]] || c[(p[i] + (1 << k)) % n] != c[(p[i - 1] + (1 << k)) % n]);
+            }
+            swap(c, new_c);
+            k++;
+        }
+        k = 0;
+        for(int i = 0; i < n - 1; i++) {
+            int j = p[c[i] - 1];
+            for(; s[i + k] == s[j + k]; k++);
+            if(c[i]) lcp[c[i] - 1] = k;
+            k = max(k - 1, 0);
+        }
+    }
+    vector<vector<int>> table;
+    void buildLcp() {
+        int LOG = __lg(n) + 1;
+        table.resize(LOG, vector<int>(n));
+        table[0] = lcp;
+        for(int l = 1; l < LOG; l++) {
+            for(int i = 0; i + (1 << (l - 1)) < n; i++) {
+                table[l][i] = min(table[l - 1][i], table[l - 1][i + (1 << (l - 1))]);
+            }
+        }
+    }
+    int query(int l, int r) { // 0-based
+        if(l == r) return n - 1 - l;
+        l = c[l], r = c[r];
+        if(l > r) swap(l, r);
+        r--;
+        int len = __lg(r - l + 1);
+        return min(table[len][l], table[len][r - (1 << len) + 1]);
+    }
+};
+
 void solve() {
 
 }
@@ -862,7 +925,7 @@ void solve() {
 int32_t main() {
     ios::sync_with_stdio(false), cin.tie(nullptr), cout.tie(nullptr);
     cout << fixed << setprecision(10);
-    //freopen("output.txt", "w", stdout); freopen("input.txt", "r", stdin);
+//    freopen("output.txt", "w", stdout); freopen("input.txt", "r", stdin);
     int test = 1;
     //cin >> test;
     while(test-- > 0) {
