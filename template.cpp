@@ -5,9 +5,9 @@
 #define fun(return, ...) function<return(__VA_ARGS__)>
 //#define int long long
 
-typedef long long ll;
+//typedef long long ll;
 const int MOD = 1e9 + 7, inf = (1 << 30) - 1;
-const ll INF = (1LL << 62) - 1;
+const int64_t INF = (1LL << 62) - 1;
 const short dx[] = {-1, 0, 0, 1, 1, -1, 1, -1};
 const short dy[] = {0, -1, 1, 0, 1, -1, -1, 1};
 const char dc[] = {'U', 'L', 'R', 'D'};
@@ -62,7 +62,7 @@ namespace numberTheory {
         for (int i = 2; i <= n; i++){
             if(!sieve[i]) {
                 sieve[i] = i;
-                for(ll j = ll(i) * i; j <= n; j += i) if(!sieve[j])
+                for(int64_t j = int64_t(i) * i; j <= n; j += i) if(!sieve[j])
                     sieve[j] = i;
             }
         }
@@ -97,11 +97,11 @@ namespace numberTheory {
         return res;
     }
 
-    bool isPrime(ll num) {
+    bool isPrime(int64_t num) {
         if(num < 2) return false;
         if(num < 4) return true;
         if(num % 2 == 0 || num % 3 == 0) return false;
-        for (ll i = 5; i * i <= num; i += 6)
+        for (int64_t i = 5; i * i <= num; i += 6)
             if (num % i == 0 || num % (i + 2) == 0)
                 return false;
         return true;
@@ -860,7 +860,7 @@ struct suffix {
 //    string s;
     vector<int> p, c, lcp;
 
-    explicit suffix(vector<int> &s) : n(int(s.size()) + 1), p(n), c(n), lcp(n) {
+    explicit suffix(string &s) : n(int(s.size()) + 1), p(n), c(n), lcp(n) {
         s.push_back(0);
         iota(p.begin(), p.end(), 0);
         sort(p.begin(), p.end(), [&](int i, int j) {
@@ -970,6 +970,29 @@ struct corasick {
         return tr[x].link;
     }
 };
+
+auto manacher(const string &t) {
+    string s = "%#";
+    s.reserve(t.size() * 2 + 3);
+    for(char c : t)
+        s += c + string("#");
+    s.push_back('$');
+    // t = aabaacaabaa -> s = %#a#a#b#a#a#c#a#a#b#a#a#$
+
+    vector<int> res(s.size());
+    for(int i = 1, l = 1, r = 1; i < s.size(); i++) {
+        res[i] = max(0, min(r - i, res[l + r - i]));
+        while(s[i + res[i]] == s[i - res[i]])
+            res[i]++;
+        if(i + res[i] > r) {
+            l = i - res[i];
+            r = i + res[i];
+        }
+    }
+    return vector<int>(res.begin() + 2, res.end() - 2); // a#a#b#a#a#c#a#a#b#a#a
+    //get max odd len = res[2 * i] - 1; aba -> i = b
+    //get max even len = res[2 * i + 1]; abba -> i = first b
+}
 
 void solve() {
 
