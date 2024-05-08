@@ -994,6 +994,77 @@ auto manacher(const string &t) {
     //get max even len = res[2 * i + 1]; abba -> i = first b
 }
 
+template<int numOfChar = 26, char firstChar = 'a'>
+struct suffix_automaton {
+    struct state {
+        array<int, numOfChar> nxt{};
+        int link = -1;
+        int len{}, cnt = 1;
+        bool isSuffix = false;
+        state() {
+            for(auto &i : nxt) i = -1;
+        }
+    };
+    int lst;
+    vector<state> tr;
+    explicit suffix_automaton(const string &s = "") : tr(1), lst(0) {
+        tr.reserve(s.size() * 2 + 1);
+        for(char i : s) {
+            add(i - firstChar);
+        }
+        if(!s.empty()) buildCnt();
+        for(int p = lst; p != -1; tr[p].isSuffix = true, p = tr[p].link);
+    }
+
+    void add(char c) {
+        int curr = int(tr.size());
+        tr.emplace_back();
+        tr[curr].len = tr[lst].len + 1;
+        int p = lst;
+        while(~p && !~tr[p].nxt[c]) {
+            tr[p].nxt[c] = curr;
+            p = tr[p].link;
+        }
+        if(p == -1) {
+            tr[curr].link = 0;
+        }
+        else {
+            int q = tr[p].nxt[c];
+            if(tr[p].len + 1 == tr[q].len) {
+                tr[curr].link = q;
+            }
+            else {
+                int clone = int(tr.size());
+                tr.emplace_back();
+                tr[clone] = tr[q];
+                tr[clone].cnt = 0;
+                tr[clone].len = tr[p].len + 1;
+                while(~p && tr[p].nxt[c] == q) {
+                    tr[p].nxt[c] = clone;
+                    p = tr[p].link;
+                }
+                tr[curr].link = tr[q].link = clone;
+            }
+        }
+        lst = curr;
+    }
+
+    void buildCnt() {
+        vector<int> srt(tr.size());
+        std::iota(srt.begin(), srt.end(), 0);
+        std::sort(srt.begin(), srt.end(), [&](int i, int j) -> bool {
+            return tr[i].len > tr[j].len;
+        });
+        for(int i : srt) {
+            if(~tr[i].link) {
+                tr[tr[i].link].cnt[0] += tr[i].cnt[0];
+                tr[tr[i].link].cnt[1] += tr[i].cnt[1];
+                tr[tr[i].link].cnt[2] += tr[i].cnt[2];
+            }
+        }
+    }
+};
+
 void solve() {
 
 }
