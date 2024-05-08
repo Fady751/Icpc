@@ -1057,9 +1057,7 @@ struct suffix_automaton {
         });
         for(int i : srt) {
             if(~tr[i].link) {
-                tr[tr[i].link].cnt[0] += tr[i].cnt[0];
-                tr[tr[i].link].cnt[1] += tr[i].cnt[1];
-                tr[tr[i].link].cnt[2] += tr[i].cnt[2];
+                tr[tr[i].link].cnt += tr[i].cnt;
             }
         }
     }
