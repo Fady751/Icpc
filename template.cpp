@@ -1063,6 +1063,91 @@ struct suffix_automaton {
     }
 };
 
+string hashGraph(vector<vector<int>> &g) {
+    int n = int(g.size()), rem = n;
+    vector<int> deg(n);
+    queue<int> q;
+
+    for(int i = 0; i < n; i++) {
+        if(g[i].size() <= 1)
+            q.push(i);
+        else
+            deg[i] = int(g[i].size());
+    }
+    vector<vector<string>> hash(n);
+    auto calc = [&](int i) {
+        std::sort(hash[i].begin(), hash[i].end());
+        string res = "(";
+        for(string &s : hash[i])
+            res += s;
+        res += ')';
+        return res;
+    };
+    while(rem > 2) {
+        int sz = int(q.size());
+        rem -= sz;
+        while(sz--) {
+            int u = q.front(); q.pop();
+            string curr = calc(u);
+            for(int nxt : g[u]) {
+                hash[nxt].push_back(curr);
+                if (--deg[nxt] == 1) {
+                    q.push(nxt);
+                }
+            }
+        }
+    }
+    int h1 = q.front();
+    string s1 = calc(q.front()); q.pop();
+    if(q.empty())
+        return s1;
+    int h2 = q.front();
+    string s2 = calc(q.front()); q.pop();
+    hash[h1].push_back(s2);
+    hash[h2].push_back(s1);
+    return min(calc(h1), calc(h2));
+}
+
+int max_flow(vector<vector<int>> g, int start, int end) {
+    if(start == end) return INT_MAX;
+    int n = int(g.size());
+    vector<int> par(n);
+    int mxFlow = 0;
+    auto bfs = [&]() {
+        std::fill(par.begin(), par.end(), -1);
+        queue<int> q;
+        q.emplace(start);
+        while(!q.empty()) {
+            auto u = q.front(); q.pop();
+            for(int v = 0; v < n; v++) {
+                if(par[v] == -1 && g[u][v] > 0) {
+                    par[v] = u;
+                    if(v == end) return true;
+                    q.emplace(v);
+                }
+            }
+        }
+        return false;
+    };
+    while(bfs()) {
+        int res = INT_MAX, v = end;
+        while(v != start) {
+            int u = par[v];
+            res = min(res, g[u][v]);
+            v =  u;
+        }
+        mxFlow += res;
+        v = end;
+        while(v != start) {
+            int u = par[v];
+            g[u][v] -= res;
+            g[v][u] += res;
+            v =  u;
+        }
+    }
+    return mxFlow;
+}
+
 void solve() {
 
 }
