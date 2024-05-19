@@ -156,8 +156,8 @@ namespace numberTheory {
 }
 //using namespace numberTheory;
 
-template<class T = long long, class U = int>
-class SegTree {
+template<class T = int64_t>
+class lazySegment {
     struct node {
         node *l, *r;
         T v{}, E{};
@@ -173,7 +173,7 @@ class SegTree {
     inline static T merge(const T &v1, const T &v2) {
         return v1 + v2;
     }
-    inline static void edit(node *x, const int &lx, const int &rx) {
+    inline static void push(node *x, const int &lx, const int &rx) {
         if(x->E) {
             if(x->l) x->l->E += x->E;
             if(x->r) x->r->E += x->E;
@@ -182,7 +182,8 @@ class SegTree {
         }
     }
 
-    void build(node *x, int lx, int rx, vector<U> &arr) {
+    template<class U>
+    void build(node *x, int lx, int rx, U &arr) {
         if(lx == rx) return void(x->v = arr[lx]);
         x->build();
         int m = (lx + rx) >> 1;
@@ -193,7 +194,7 @@ class SegTree {
 
     T get(node *x, int lx, int rx, int l, int r) {
         if(lx != rx) x->build();
-        edit(x, lx, rx);
+        push(x, lx, rx);
         if(lx > r || l > rx) return 0;
         if(lx >= l && rx <= r) return x->v;
         int m = (lx + rx) >> 1;
@@ -201,20 +202,20 @@ class SegTree {
     }
     void set(node *x, int lx, int rx, int i, T val) {
         if(lx != rx) x->build();
-        edit(x, lx, rx);
+        push(x, lx, rx);
         if (i < lx || i > rx) return;
         if(lx == rx) return void(x->v = val);
         int m = (lx + rx) >> 1;
         set(x->l, lx, m, i, val), set(x->r, m + 1, rx, i, val);
         merge(x);
     }
-    void setRange(node *x, int lx, int rx, int l, int r, T val) {
+    void Range(node *x, int lx, int rx, int l, int r, T val) {
         if(lx != rx) x->build();
-        edit(x, lx, rx);
+        push(x, lx, rx);
         if(lx > r || l > rx) return;
-        if(lx >= l && rx <= r) return x->E = val, edit(x, lx, rx);
+        if(lx >= l && rx <= r) return x->E = val, push(x, lx, rx);
         int m = (lx + rx) >> 1;
-        setRange(x->l, lx, m, l, r, val), setRange(x->r, m + 1, rx, l, r, val);
+        Range(x->l, lx, m, l, r, val), Range(x->r, m + 1, rx, l, r, val);
         merge(x);
     }
     void del(node *x) {
@@ -224,12 +225,13 @@ class SegTree {
         }
     }
 public://based index 0
-    explicit SegTree(int n) : size(n), root(new node()) { }
+    explicit lazySegment(int n = 1000000000) : size(n), root(new node()) { }
 
-    explicit SegTree(vector<U> &arr) : size(arr.size() - 1), root(new node()) {
+    template<class U>
+    explicit lazySegment(U &arr) : size(int(arr.size()) - 1), root(new node()) {
         build(root, 0, size, arr);
     }
-    ~SegTree(){
+    ~lazySegment(){
         del(root);
     }
     void set(int i, T v) {
@@ -239,14 +241,21 @@ public://based index 0
         return get(root, 0, size, l, r);
     }
     T operator[](int i) {
-        return get(i, i);
+        return get(root, 0, size, i, i);
     }
-    void plusRange(int l, int r, T val) {
-        setRange(root, 0, size, l, r, val);
+    void Range(int l, int r, T val) {
+        Range(root, 0, size, l, r, val);
+    }
+    void clear() {
+        del(root);
+        root = new node();
+    }
+    void resize(int sz) {
+        size = sz;
     }
 };
 
-template<class info = int64_t, info defaultVal = info{}>
+template<class info = int64_t>
 class segmentTree {
     struct node {
         node *l, *r;
@@ -257,18 +266,16 @@ class segmentTree {
         }
     } *root;
     int size;
-    inline void _merge(node *x) {
-        x->v = merge(x->l->v, x->r->v);
-    }
+    static info defaultVal;
 
     template<class U>
-    void build(node *x, int lx, int rx, vector<U> &arr) {
+    void build(node *x, int lx, int rx, U &arr) {
         if(lx == rx) return void(x->v = arr[lx]);
         x->create();
         int m = (lx + rx) >> 1;
         build(x->l, lx, m, arr);
         build(x->r, m + 1, rx, arr);
-        _merge(x);
+        x->v = x->l->v + x->r->v;
     }
 
     info get(node *x, int lx, int rx, int l, int r) {
@@ -276,28 +283,29 @@ class segmentTree {
         if(lx > r || l > rx) return defaultVal;
         if(lx >= l && rx <= r) return x->v;
         int m = (lx + rx) >> 1;
-        return merge(get(x->l, lx, m, l, r), get(x->r, m + 1, rx, l, r));
+        return get(x->l, lx, m, l, r) + get(x->r, m + 1, rx, l, r);
     }
+
     void set(node *x, int lx, int rx, int i, info val) {
         if(lx != rx) x->create();
         if (i < lx || i > rx) return;
         if(lx == rx) return void(x->v = val);
         int m = (lx + rx) >> 1;
         set(x->l, lx, m, i, val), set(x->r, m + 1, rx, i, val);
-        _merge(x);
+        x->v = x->l->v + x->r->v;
     }
+
     void del(node *x) {
         if(x){
             del(x->l), del(x->r);
             delete x;
         }
     }
-    function<info(const info &, const info &)> merge;
 public://0-based
-    explicit segmentTree(int n = 1000000000, function<info(const info &, const info &)> _merge = [](const info &v1, const info &v2){return v1 + v2;}) : size(n), root(new node()), merge(std::move(_merge)) { }
+    explicit segmentTree(int n = 1000000000) : size(n), root(new node()) { }
 
     template<class U>
-    explicit segmentTree(vector<U> &arr, function<info(const info &, const info &)> _merge = [](const info &v1, const info &v2){return v1 + v2;}) : size(arr.size() - 1), root(new node()), merge(std::move(_merge)) {
+    explicit segmentTree(U &arr) : size(int(arr.size()) - 1), root(new node()) {
         build(root, 0, size, arr);
     }
     ~segmentTree(){
@@ -316,7 +324,21 @@ public://0-based
         del(root);
         root = new node();
     }
+    void resize(int sz) {
+        size = sz;
+    }
 };
+
+struct info {
+    int64_t sum;
+    info(int64_t x = 0LL) {
+        sum = x;
+    }
+    info operator+(const info &o) const {
+        return sum + o.sum;
+    }
+};
+template<> info segmentTree<info>::defaultVal = info();
 
 template<typename T>
 struct sparse{
@@ -1146,6 +1168,75 @@ int max_flow(vector<vector<int>> g, int start, int end) {
         }
     }
     return mxFlow;
+}
+
+struct edge {
+    int from, to;
+    int cap;
+    int64_t cost;
+    explicit edge(int u, int v, int cap, int64_t cost) : from(u), to(v), cap(cap), cost(cost) { }
+};
+
+pair<int, int64_t> min_cost_max_flow(const vector<edge> &edges, int start, int end, int n) { // {max flow, min cost}
+    if(start == end) return {INT_MAX, 0};
+    vector<int> par(n);
+    int mxFlow = 0;
+    int64_t mnCost = 0, inf = 1e17;
+    vector<vector<int>> g(n, vector<int>(n)); // cap
+    vector<vector<int64_t>> c(n, vector<int64_t>(n)); // cost
+    vector<vector<int>> adj(n);
+
+    for(auto [u, v, cap, cost] : edges) {
+        adj[u].push_back(v);
+        adj[v].push_back(u);
+        g[u][v] = cap;
+        c[u][v] = cost;
+        c[v][u] = -cost;
+    }
+
+    auto bfs = [&]() -> bool {
+        std::fill(par.begin(), par.end(), -1);
+        vector<int64_t> d(n, inf);
+        d[start] = 0;
+        vector<bool> inq(n, false);
+        queue<int> q;
+        q.push(start);
+
+        while (!q.empty()) {
+            int u = q.front();
+            q.pop();
+            inq[u] = false;
+            for (int v : adj[u]) {
+                if (g[u][v] > 0 && d[v] > d[u] + c[u][v]) {
+                    d[v] = d[u] + c[u][v];
+                    par[v] = u;
+                    if (!inq[v]) {
+                        inq[v] = true;
+                        q.push(v);
+                    }
+                }
+            }
+        }
+        return ~par[end];
+    };
+    while(bfs()) {
+        int res = INT_MAX, v = end;
+        while(v != start) {
+            int u = par[v];
+            res = min(res, g[u][v]);
+            v =  u;
+        }
+        v = end;
+        mxFlow += res;
+        while(v != start) {
+            int u = par[v];
+            g[u][v] -= res;
+            mnCost += res * c[u][v];
+            g[v][u] += res;
+            v =  u;
+        }
+    }
+    return {mxFlow, mnCost};
 }
 
 void solve() {
