@@ -11,7 +11,8 @@ const int64_t INF = (1LL << 62) - 1;
 const short dx[] = {-1, 0, 0, 1, 1, -1, 1, -1};
 const short dy[] = {0, -1, 1, 0, 1, -1, -1, 1};
 const char dc[] = {'U', 'L', 'R', 'D'};
-std::mt19937 rnd(time(nullptr)); //uniform_int_distribution<ll>(l, r)(rnd);
+std::mt19937 rnd(time(nullptr));
+#define rng(l, r) uniform_int_distribution<int64_t>(l, r)(rnd)
 using namespace std;
 
 template<class U, typename T>
@@ -151,8 +152,105 @@ namespace numberTheory {
         if (r > n) return 0;
         return static_cast<type>((static_cast<cast>(fac[n]) * modularInverse(fac[n - r])) % mod);
     }
-    template<typename T>
-    inline T lowBit(T x) {return x&-x;}
+    template<typename T = int>
+    struct equation { // n0 * x + n1 * y == n
+        bool valid;
+        T x, y, n0, n1, n, g;
+        short sign_n0g{}, sign_n1g{};
+        explicit equation(T a, T b, T n) : n0(a), n1(b), n(n), x(1), y(0) { // must a != 0 && b != 0
+            T q, x1 = 0, y1 = 1, t;
+            while(b) {
+                q = a / b;
+                t = b, b = a - q * b, a = t;
+                t = x1, x1 = x - q * x1, x = t;
+                t = y1, y1 = y - q * y1, y = t;
+            }
+            g = a;
+
+            valid = n % g == 0;
+            if(valid){
+                x *= n / g;
+                y *= n / g;
+                stepX = n1 / g;
+                stepY = n0 / g;
+                sign_n0g = (stepY < 0 ? -1 : 1);
+                sign_n1g = (stepX < 0 ? -1 : 1);
+            }
+        }
+        T stepX{}, stepY{};
+        void shift(int64_t cnt) {
+            // n0 * (x + n1 / g) + n1 * (y - n0 / g) == n
+            x += stepX * cnt;
+            y -= stepY * cnt;
+        }
+        void toX(int64_t new_x, bool f = true) {
+            // f == 0? x <= new_x: x >= new_x
+            if(stepX == 0) return;
+            int64_t dif = (new_x - x) / stepX;
+            shift(dif);
+            if(x < new_x && f) {
+                shift(sign_n1g);
+                assert(x >= new_x);
+            }
+            else if(x > new_x && !f) {
+                shift(-sign_n1g);
+                assert(x <= new_x);
+            }
+        }
+
+        void toY(int64_t new_y, bool f = true) {
+            // f == 0? y <= new_y: y >= new_y
+            if(stepY == 0) return;
+            int64_t dif = (y - new_y) / stepY;
+            shift(dif);
+            if(y < new_y && f) {
+                shift(-sign_n0g);
+                assert(y >= new_y);
+            }
+            else if(y > new_y && !f) {
+                shift(sign_n0g);
+                assert(y <= new_y);
+            }
+        }
+        array<T, 3> count(T lx, T rx, T ly, T ry) { // {cnt, lx, rx}
+            toX(lx);
+            if(x > rx) return {};
+            lx = x;
+            toX(rx, false);
+            rx = x;
+
+            toY(ly);
+            if(y > ry) return {};
+            ly = x;
+            toY(ry, false);
+            ry = x;
+
+            if(ly > ry) swap(ly, ry);
+            lx = max(lx, ly);
+            rx = min(rx, ry);
+            if(lx > rx) return {};
+            return {(rx - lx) / abs(stepX) + 1, lx, rx};
+        }
+    };
+    map<int64_t, int> dpFib;
+    int fib(int64_t n) {
+        if(n == 0) return 0;
+        if(n <= 2) return 1;
+        if(dpFib.count(n))
+            return dpFib[n];
+        if(n & 1) {
+            int a = fib(n / 2);
+            int b = fib(n / 2 + 1);
+            int &ret = dpFib[n] = int(a * 1LL * a % mod) + int(b * 1LL * b % mod);
+            return ret = (ret >= mod? ret - mod: ret);
+        }
+        int a = fib(n - 1);
+        int c = fib(n - 3);
+        int b = a - c;
+        if(b < 0) b += mod;
+        a += b;
+        return dpFib[n] = (a >= mod ? a - mod : a);
+    }
 }
 //using namespace numberTheory;
 
