@@ -6,7 +6,7 @@
 //#define int long long
 
 //typedef long long ll;
-const int MOD = 1e9 + 7, inf = (1 << 30) - 1;
+const int MOD = 1e9 + 7, Inf = (1 << 30) - 1;
 const int64_t INF = (1LL << 62) - 1;
 const short dx[] = {-1, 0, 0, 1, 1, -1, 1, -1};
 const short dy[] = {0, -1, 1, 0, 1, -1, -1, 1};
@@ -445,8 +445,7 @@ struct sparse{
     static T merge(T &x, T &y) {
         return __gcd(x, y);
     }
-    explicit sparse(vector<T> &arr) : n((int)arr.size()), Log(__lg(arr.size()) + 1) {
-        table.resize(Log, vector<T>(n));
+    explicit sparse(vector<T> &arr) : n((int)arr.size()), Log(__lg(arr.size()) + 1), table(Log, vector<T>(n)) {
         table[0] = arr;
         for(int l = 1; l < Log; l++) {
             for(int i = 0; i + (1 << (l - 1)) < n; i++) {
@@ -454,9 +453,8 @@ struct sparse{
             }
         }
     }
-    T ans(int l, int r) {
-        if(l > r)
-            return {};
+    T query(int l, int r) {
+        if(l > r) return {};
         int len = __lg(r - l + 1);
         return merge(table[len][l], table[len][r - (1 << len) + 1]);
     }
