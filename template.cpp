@@ -3,6 +3,7 @@
 
 #define all(x) x.begin(), x.end()
 #define fun(return, ...) function<return(__VA_ARGS__)>
+#define debug(x) cout << (#x) << " = " << (x) << '\n'
 //#define int long long
 
 //typedef long long ll;
@@ -1334,6 +1335,111 @@ pair<int, int64_t> min_cost_max_flow(const vector<edge> &edges, int start, int e
     }
     return {mxFlow, mnCost};
 }
+
+struct matching {
+    int nl, nr;
+    vector<vector<int>> g;
+    vector<int> dis, ml, mr;
+    explicit matching(int nl, int nr) : nl(nl), nr(nr), g(nl), dis(nl), ml(nl, -1), mr(nr, -1) { }
+
+    void add(int l, int r) {
+        g[l].push_back(r);
+    }
+
+    void bfs() {
+        queue<int> q;
+        for(int u = 0; u < nl; u++) {
+            if(ml[u] == -1) {
+                q.push(u);
+                dis[u] = 0;
+            }
+            else {
+                dis[u] = -1;
+            }
+        }
+        while(!q.empty()) {
+            int l = q.front(); q.pop();
+            for(int r : g[l]) {
+                if(mr[r] != -1 && dis[mr[r]] == -1) {
+                    q.push(mr[r]);
+                    dis[mr[r]] = dis[l] + 1;
+                }
+            }
+        }
+    }
+
+    bool canMatch(int l) {
+        for(int r : g[l]) {
+            if(mr[r] == -1) {
+                mr[r] = l, ml[l] = r;
+                return true;
+            }
+        }
+        for(int r : g[l]) {
+            if(dis[l] + 1 == dis[mr[r]] && canMatch(mr[r])) {
+                mr[r] = l, ml[l] = r;
+                return true;
+            }
+        }
+        return false;
+    }
+
+    int maxMatch() {
+        int ans = 0, turn = 1;
+        while(turn) {
+            bfs();
+            turn = 0;
+            for(int l = 0; l < nl; l++) {
+                if(ml[l] == -1) {
+                    turn += canMatch(l);
+                }
+            }
+            ans += turn;
+        }
+        return ans;
+    }
+    int maxMatchKarp() {
+        int ans = 0, visid = 0;
+        vector<int> vis(nl);
+        for(int l = 0; l < nl; l++) {
+            for(int r : g[l]) {
+                if(mr[r] == -1) {
+                    mr[r] = l, ml[l] = r;
+                    break;
+                }
+            }
+        }
+        function<bool(int)> Karp = [&](int l) -> bool {
+            if(vis[l] == visid) return false;
+            vis[l] = visid;
+            for(int r : g[l]) {
+                if(mr[r] == -1 || Karp(mr[r])) {
+                    mr[r] = l, ml[l] = r;
+                    return true;
+                }
+            }
+            return false;
+        };
+
+        for(int l = 0; l < nl; l++) {
+            if(ml[l] == -1) {
+                visid++;
+                ans += Karp(l);
+            }
+        }
+        return ans;
+    }
+    pair<vector<int>, vector<int>> minCover() {
+        vector<int> L, R;
+        for (int u = 0; u < nl; ++u) {
+            if (dis[u] == -1)
+                L.push_back(u);
+            else if (ml[u] != -1)
+                R.push_back(ml[u]);
+        }
+        return {L, R};
+    }
+};
 
 void solve() {
 
