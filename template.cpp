@@ -577,49 +577,60 @@ namespace RollingHash {
 }
 //using namespace RollingHash;
 
-namespace Trie{
+template<int Log = 30>
+class trie_xor{
     struct node{
-        int cnt = 0;
+        int cnt{};
         node *mp[2]{};
-        node(){for(auto &i: mp)i=nullptr;}
-    };
-    #define Log 30
-    node *root = nullptr;
-    void insert(int num, node *x = root, int i = Log) {
-        x->cnt++;
-        if(i == -1)
-            return;
-        bool l = num & (1 << i);
-        if(!x->mp[l])
-            x->mp[l] = new node();
-        insert(num, x->mp[l], i - 1);
-    }
-    int Max(int num, node *x = root, int i = Log) {
-        if(i == -1 || !x)
-            return 0;
-        bool l = !(num & (1 << i));
+    } *root = new node;
 
-        if(x->mp[l] && x->mp[l]->cnt)
-            return (1 << i) * l + Max(num, x->mp[l], i - 1);
-        return (1 << i) * !l + Max(num, x->mp[!l], i - 1);
-    }
-    int Min(int num, node *x = root, int i = Log) {
-        if(i == -1 || !x)
-            return 0;
-        bool l = (num & (1 << i));
-
-        if(x->mp[l] && x->mp[l]->cnt)
-            return (1 << i) * l + Min(num, x->mp[l], i - 1);
-        return (1 << i) * !l + Min(num, x->mp[!l], i - 1);
-    }
-    void clear(node *x = root) {
+    void clear(node *x) {
         if(!x) return;
         for(auto &i : x->mp)
             clear(i);
         delete x;
     }
-}
-//using namespace Trie;
+public:
+    ~trie_xor() {
+        clear(root);
+    }
+
+    void add(int num, int c = 1) {
+        node *x = root;
+        for(int i = Log; i >= 0; i--) {
+            x->cnt += c;
+            bool b = num & (1 << i);
+            if(!x->mp[b])
+                x->mp[b] = new node;
+            x = x->mp[b];
+        }
+        x->cnt += c;
+    }
+
+    int get(int num, bool max = true) {
+        if(root->cnt <= 0)
+            return 0; // trie is empty
+        node *x = root;
+        int ans = 0;
+        for(int i = Log; i >= 0; i--) {
+            bool b = bool(num & (1 << i)) ^ max;
+            if(x->mp[b] && x->mp[b]->cnt > 0) {
+                if(b) ans |= 1 << i;
+                x = x->mp[b];
+            }
+            else {
+                if(!b) ans |= 1 << i;
+                x = x->mp[!b];
+            }
+        }
+        return ans ^ num;
+    }
+
+    void clear() {
+        clear(root);
+        root = new node;
+    }
+};
 
 template<class T = long long>
 struct BIT { //1-based
