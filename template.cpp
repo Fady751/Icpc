@@ -1452,6 +1452,72 @@ struct matching {
     }
 };
 
+struct Centroid {
+    vector<vector<int>> g;
+    vector<int> siz, prevCen;
+    vector<bool> removed;
+    void add(int u, int v) {
+        g[u].emplace_back(v);
+        g[v].emplace_back(u);
+    }
+    int dfs_sz(int u, int p = -1) {
+        siz[u] = 1;
+        for(auto v : g[u]) {
+            if(!removed[v] && v != p) {
+                siz[u] += dfs_sz(v, u);
+            }
+        }
+        return siz[u];
+    }
+    int calcCentroid(int u) {
+        int p = -1, sz = dfs_sz(u);
+        bool done = false;
+        while(!done) {
+            done = true;
+            for(auto v : g[u]) {
+                if(!removed[v] && v != p && siz[v] << 1 > sz) {
+                    done = false;
+                    p = u, u = v;
+                    break;
+                }
+            }
+        }
+        removed[u] = true;
+        return u;
+    }
+
+    explicit Centroid(int n) : g(n), siz(n), prevCen(n), removed(n), d(n) {}
+    struct data {
+        int a;
+        int64_t len;
+    };
+    vector<vector<data>> d;
+
+    void dfs(int u, int centroid, int64_t lvl = 0, int p = -1) {
+        d[u].push_back({centroid, lvl});
+        for(auto v : g[u]) {
+            if(!removed[v] && v != p) {
+                dfs(v, centroid, lvl + 1, u);
+            }
+        }
+    }
+
+    void build(int u = 0, int p = -1) {
+        u = calcCentroid(u);
+        prevCen[u] = p;
+        // do something...
+        for(auto v : g[u]) if(!removed[v]) {
+                dfs(v, u);
+            }
+        // ...
+        for(auto v : g[u]) {
+            if(!removed[v]) {
+                build(v, u);
+            }
+        }
+    }
+};
+
 void solve() {
 
 }
