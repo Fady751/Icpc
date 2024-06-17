@@ -1489,11 +1489,11 @@ struct Centroid {
     explicit Centroid(int n) : g(n), siz(n), prevCen(n), removed(n), d(n) {}
     struct data {
         int a;
-        int64_t len;
+        int len;
     };
     vector<vector<data>> d;
 
-    void dfs(int u, int centroid, int64_t lvl = 0, int p = -1) {
+    void dfs(int u, int centroid, int lvl = 1, int p = -1) {
         d[u].push_back({centroid, lvl});
         for(auto v : g[u]) {
             if(!removed[v] && v != p) {
@@ -1507,8 +1507,8 @@ struct Centroid {
         prevCen[u] = p;
         // do something...
         for(auto v : g[u]) if(!removed[v]) {
-                dfs(v, u);
-            }
+            dfs(v, u);
+        }
         // ...
         for(auto v : g[u]) {
             if(!removed[v]) {
@@ -1539,7 +1539,7 @@ int32_t main() {
  sum of divisors
  prime^power * prime2^power2 * ...
 
- ((prime^(power + 1)) / (prime - 1)) * ((prime2^(power2 + 1)) / (prime2 - 1)) * ...
+ ((prime^(power + 1) - 1) / (prime - 1)) * ((prime2^(power2 + 1) - 1) / (prime2 - 1)) * ...
  ===================================================================================================
  num ^ (num2 ^ p) % mod = num ^ ((num2 ^ p) % (mod - 1)) % mod
 
