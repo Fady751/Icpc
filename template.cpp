@@ -632,32 +632,37 @@ public:
     }
 };
 
-template<class T = long long>
-struct BIT { //1-based
+template<class T>
+struct BIT { // 1-based
+    int n;
     vector<T> tree;
-    explicit BIT(int size = 1e6) {
-        tree.resize(size + 1);
-    }
+    explicit BIT(int size) : n(size), tree(size + 1) { }
 
-    void update(int i, T val) {
-        assert(i > 0);
-        while (i < tree.size()) {
+    void add(int i, T val) {
+        for (; i <= n; i += i & -i)
             tree[i] += val;
-            i += (i & -i);
-        }
     }
 
     T query(int i) {
         T sum = 0;
-        while (i > 0) {
+        for (; i > 0; i -= i & -i)
             sum += tree[i];
-            i -= (i & -i);
-        }
         return sum;
     }
 
-    T rangeQuery(int l, int r) {
+    T range(int l, int r) {
         return query(r) - query(l - 1);
+    }
+
+    int lower_bound(T target) {
+        int i = 0;
+        T curr = 0;
+        for (int mask = 1 << __lg(n); mask > 0; mask >>= 1) {
+            if (i + mask <= n && curr + tree[i + mask] < target) {
+                curr += tree[i += mask];
+            }
+        }
+        return i + 1;
     }
 };
 
