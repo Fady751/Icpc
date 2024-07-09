@@ -1523,6 +1523,63 @@ struct Centroid {
     }
 };
 
+namespace matrices {
+    int mod = 1'000'000'007;
+    struct matrix : public vector<vector<int>> {
+        size_t n;
+        matrix(size_t n, bool d = false) : n(n), vector(n, vector<int>(n)) {
+            for(int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    (*this)[i][j] = i == j ? d : 0;
+                }
+            }
+        }
+        matrix operator*(const matrix &B) const {
+            matrix C(n);
+            for(int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    for (int k = 0; k < n; k++) {
+                        C[i][j] = (C[i][j] + (*this)[i][k] * B[k][j]) % mod;
+                    }
+                }
+            }
+            return C;
+        }
+        matrix& operator^=(int64_t p) {
+            matrix res(n, true);
+            while(p > 0) {
+                if(p & 1) res = res * *this;
+                *this = *this * *this;
+                p >>= 1;
+            }
+            return *this = res;
+        }
+    };
+
+/*
+    f(n) = a * f(n - 1) + b * f(n - 3) + c
+    T = {a, 0, b, 1},
+        {1, 0, 0, 0},
+        {0, 1, 0, 0},
+        {0, 0, 0, 1}
+    T ^= n - 3
+    res = T[0][0] * f(3) + T[0][1] * f(2) + T[0][2] * f(1) + T[0][3] * c
+*/
+
+    int f(int64_t n) { // f(n) = f(n - 1) + f(n - 2) + 1
+        if(n <= 1) return 1;
+        if(n == 2) return 3;
+        matrix t(3);
+        t[0] = {1, 1, 1};
+        t[1] = {1, 0, 0};
+        t[2] = {0, 0, 1};
+        t ^= n - 2;
+        // f(2), f(1), const
+        return (t[0][0] * 3 % mod + t[0][1] * 1 + t[0][2] * 1) % mod;
+    }
+}
+using namespace matrices;
+
 void solve() {
 
 }
