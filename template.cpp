@@ -1420,7 +1420,7 @@ struct matching {
         for(int l = 0; l < nl; l++) {
             for(int r : g[l]) {
                 if(mr[r] == -1) {
-                    mr[r] = l, ml[l] = r;
+                    mr[r] = l, ml[l] = r, ans++;
                     break;
                 }
             }
