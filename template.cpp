@@ -919,15 +919,13 @@ public:
     }
 };
 
-template<int bits = 20>
-struct Basis {
+const int bits = __lg(100000) + 1;
+struct basis {
     int sz = 0;
     array<int, bits> arr{};
-    void push(int x) {
-        if(sz == bits) return; //can make any number
-        int i;
-        while(x) {
-            i = __lg(x & -x);
+    void add(int x) {
+        if(sz == bits) return;
+        for(int i = __lg(x); x; i = __lg(x)) {
             if(!arr[i])
                 return sz++, void(arr[i] = x);
             x ^= arr[i];
@@ -935,29 +933,37 @@ struct Basis {
     }
     bool find(int x) {
         if(sz == bits) return true;
-        int i;
-        while(x) {
-            i = __lg(x & -x);
+        for(int i = __lg(x); x; i = __lg(x)) {
             if(arr[i])
                 x ^= arr[i];
             else
                 return false;
         }
-        return true;
+        return !x;
     }
     void clear() {
         if(!sz) return;
-        for(int i = 0; i < bits; i++) arr[i] = 0;
+        arr.fill(0);
         sz = 0;
     }
-    void operator+=(const Basis o) {
-        if(sz == bits) return;
-        if(o.sz == bits) { *this = o; return; }
-        for(int i = 0; i < bits; i++) {
-            if(o.arr[i]) {
-                push(o.arr[i]);
+    int getMax() {
+        int maxXor = 0;
+        for (int i = bits - 1; i >= 0; i--) {
+            if ((maxXor ^ arr[i]) > maxXor) {
+                maxXor ^= arr[i];
             }
         }
+        return maxXor;
+    }
+    basis& operator+=(const basis &o) {
+        if(sz == bits) return *this;
+        if(o.sz == bits) { return *this = o; }
+        for(int i = 0; i < bits; i++) {
+            if(o.arr[i]) {
+                add(o.arr[i]);
+            }
+        }
+        return *this;
     }
 };
 
