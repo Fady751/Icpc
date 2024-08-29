@@ -878,44 +878,79 @@ void moAlgo() {
         cout << i << '\n';
 }
 
-class LCA {
-public:
-    int LOG, n;
+struct tree {
+    int root;
+    vector<vector<int>> g;
+    explicit tree(int n, int root = 0) : g(n), root(root) { }
+    void add(int u, int v) {
+        g[u].push_back(v);
+        g[v].push_back(u);
+    }
+
+    vector<int> &operator[](int u) {
+        return g[u];
+    }
+
+    int lg = 17, cntDfs = 0;
+    vector<int> in, out, lvl, sz, Log;
     vector<vector<int>> up;
-    vector<int> lvl;
-    explicit LCA(const vector<vector<int>> &g, int root = 0) : n(int(g.size())), LOG(__lg(int(g.size())) + 1), lvl(n), up(n, vector<int>(LOG, 0)) {
-        function<void(int)> dfs = [&](int u) -> void {
-            for(auto nxt : g[u]) if(nxt != up[u][0]) {
-                    up[nxt][0] = u;
-                    lvl[nxt] = lvl[u] + 1;
-                    for(int i = 1; i < LOG; i++) {
-                        up[nxt][i] = up[up[nxt][i - 1]][i - 1];
-                    }
-                    dfs(nxt);
-                }
-        };
+    void build() {
+        in = out = lvl = sz = Log = vector<int>(g.size());
+        Log[0] = -1;
+        for(int i = 2; i < g.size(); i++)
+            Log[i] = Log[i >> 1] + 1;
+        lg = Log[((int)g.size()) >> 1] + 2;
+        up = vector<vector<int>>(g.size(), vector<int>(lg, -1));
         dfs(root);
     }
-    int get_k_ancestor(int v, int k) {
-        while(k > 0) {
-            v = up[v][__lg(k & -k)];
-            k ^= k & -k;
-        }
-        return v;
-    }
-    int lca(int a, int b) {
-        if(lvl[a] < lvl[b]) swap(a, b);
-        a = get_k_ancestor(a, lvl[a] - lvl[b]);
-        if(a == b)
-            return a;
 
-        for(int i = LOG - 1; i >= 0; i--) {
-            if(up[a][i] != up[b][i]) {
-                a = up[a][i];
-                b = up[b][i];
+    void dfs(int u) {
+        if(u != root) {
+            g[u].erase(find(g[u].begin(), g[u].end(), up[u][0]));
+        }
+        in[u] = cntDfs++;
+        sz[u] = 1;
+        for(int &v : g[u]) {
+            lvl[v] = lvl[u] + 1;
+            up[v][0] = u;
+            for(int i = 1; i < lg && ~up[v][i - 1]; i++) {
+                up[v][i] = up[up[v][i - 1]][i - 1];
+            }
+            dfs(v);
+            sz[u] += sz[v];
+            if(sz[v] > sz[g[u][0]])
+                swap(v, g[u][0]);
+        }
+        out[u] = cntDfs - 1;
+    }
+
+    int jump(int u, int k) {
+        while(k) {
+            u = up[u][Log[k]];
+            k ^= 1 << Log[k];
+        }
+        return u;
+    }
+
+    bool isAncester(int u, int v) {
+        return in[u] <= in[v] && in[v] <= out[u];
+    }
+
+    int lca(int u, int v) {
+        if(lvl[u] > lvl[v]) swap(u, v);
+        if(isAncester(u, v)) return u;
+        v = jump(v, lvl[v] - lvl[u]);
+        for(int j = lg - 1; j >= 0; j--) {
+            if(up[u][j] != up[v][j]) {
+                u = up[u][j];
+                v = up[v][j];
             }
         }
-        return up[a][0];
+        return up[u][0];
+    }
+
+    int dis(int u, int v) {
+        return lvl[u] + lvl[v] - 2 * lvl[lca(u, v)];
     }
 };
 
