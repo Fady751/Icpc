@@ -879,9 +879,9 @@ void moAlgo() {
 }
 
 struct tree {
-    int root;
+    int root = 0;
     vector<vector<int>> g;
-    explicit tree(int n, int root = 0) : g(n), root(root) { }
+    explicit tree(int n) : g(n) { }
     void add(int u, int v) {
         g[u].push_back(v);
         g[v].push_back(u);
@@ -894,7 +894,8 @@ struct tree {
     int lg = 17, cntDfs = 0;
     vector<int> in, out, lvl, sz, Log;
     vector<vector<int>> up;
-    void build() {
+    void build(int rt = 0) {
+        root = rt;
         in = out = lvl = sz = Log = vector<int>(g.size());
         Log[0] = -1;
         for(int i = 2; i < g.size(); i++)
