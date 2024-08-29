@@ -925,6 +925,7 @@ struct tree {
     }
 
     int jump(int u, int k) {
+        if(k > lvl[u]) return -1;
         while(k) {
             u = up[u][Log[k]];
             k ^= 1 << Log[k];
