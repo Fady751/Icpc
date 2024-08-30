@@ -892,11 +892,12 @@ struct tree {
     }
 
     int lg = 17, cntDfs = 0;
-    vector<int> in, out, lvl, sz, Log;
+    vector<int> in, out, lvl, sz, Log, par;
     vector<vector<int>> up;
     void build(int rt = 0) {
         root = rt;
-        in = out = lvl = sz = Log = vector<int>(g.size());
+        in = out = lvl = sz = par = Log = vector<int>(g.size());
+        par[root] = -1;
         Log[0] = -1;
         for(int i = 2; i < g.size(); i++)
             Log[i] = Log[i >> 1] + 1;
@@ -918,6 +919,7 @@ struct tree {
                 up[v][i] = up[up[v][i - 1]][i - 1];
             }
             dfs(v);
+            par[v] = u;
             sz[u] += sz[v];
             if(sz[v] > sz[g[u][0]])
                 swap(v, g[u][0]);
