@@ -908,7 +908,7 @@ struct tree {
 
     void dfs(int u) {
         if(u != root) {
-            g[u].erase(find(g[u].begin(), g[u].end(), up[u][0]));
+            g[u].erase(find(g[u].begin(), g[u].end(), par[u]));
         }
         in[u] = cntDfs++;
         sz[u] = 1;
@@ -918,8 +918,8 @@ struct tree {
             for(int i = 1; i < lg && ~up[v][i - 1]; i++) {
                 up[v][i] = up[up[v][i - 1]][i - 1];
             }
-            dfs(v);
             par[v] = u;
+            dfs(v);
             sz[u] += sz[v];
             if(sz[v] > sz[g[u][0]])
                 swap(v, g[u][0]);
