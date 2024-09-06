@@ -1610,7 +1610,19 @@ namespace matrices {
         return (t[0][0] * 3 % mod + t[0][1] * 1 + t[0][2] * 1) % mod;
     }
 }
-using namespace matrices;
+//using namespace matrices;
+
+void sos(vector<int> &dp, bool Do = true) {
+    // do -> sum of subsets, !do -> undo pre operation
+    for (int i = 0; 1 << i < dp.size(); i++) {
+        for (int mask = 0; mask < dp.size(); mask++) {
+            if (mask & (1 << i)) {
+                dp[mask] += Do ? dp[mask ^ (1 << i)] : -dp[mask ^ (1 << i)];
+//                dp[mask] >= mod? dp[mask] -= mod: dp[mask] < 0? dp[mask] += mod: 0;
+            }
+        }
+    }
+}
 
 void solve() {
 
