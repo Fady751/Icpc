@@ -1508,15 +1508,11 @@ struct Centroid {
     }
     int calcCentroid(int u) {
         int p = -1, sz = dfs_sz(u);
-        bool done = false;
-        while(!done) {
-            done = true;
-            for(auto v : g[u]) {
-                if(!removed[v] && v != p && siz[v] << 1 > sz) {
-                    done = false;
-                    p = u, u = v;
-                    break;
-                }
+        con:
+        for(auto v : g[u]) {
+            if(!removed[v] && v != p && siz[v] << 1 > sz) {
+                p = u, u = v;
+                goto con;
             }
         }
         removed[u] = true;
@@ -1524,14 +1520,10 @@ struct Centroid {
     }
 
     explicit Centroid(int n) : g(n), siz(n), prevCen(n), removed(n), d(n) {}
-    struct data {
-        int a;
-        int len;
-    };
-    vector<vector<data>> d;
+    vector<vector<pair<int, int>>> d;
 
     void dfs(int u, int centroid, int lvl = 1, int p = -1) {
-        d[u].push_back({centroid, lvl});
+        d[u].emplace_back(centroid, lvl);
         for(auto v : g[u]) {
             if(!removed[v] && v != p) {
                 dfs(v, centroid, lvl + 1, u);
