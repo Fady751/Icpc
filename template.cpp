@@ -891,49 +891,48 @@ struct tree {
         return g[u];
     }
 
-    int lg = 17, cntDfs = 0;
-    vector<int> in, out, lvl, sz, Log, par;
-    vector<vector<int>> up;
-    void build(int rt = 0) {
+    int cntDfs = 0;
+    vector<int> in, out, lvl, sz, top, par, seq;
+
+    void init(int rt = 0) {
         root = rt;
-        in = out = lvl = sz = par = Log = vector<int>(g.size());
-        par[root] = -1;
-        Log[0] = -1;
-        for(int i = 2; i < g.size(); i++)
-            Log[i] = Log[i >> 1] + 1;
-        lg = Log[((int)g.size()) >> 1] + 2;
-        up = vector<vector<int>>(g.size(), vector<int>(lg, -1));
+        in = out = lvl = top = par = seq = vector<int>(g.size());
+        sz.resize(g.size(), 1);
+        par[root] = top[root] = root;
         dfs(root);
+        dfs2(root);
     }
 
     void dfs(int u) {
-        if(u != root) {
-            g[u].erase(find(g[u].begin(), g[u].end(), par[u]));
-        }
-        in[u] = cntDfs++;
-        sz[u] = 1;
         for(int &v : g[u]) {
             lvl[v] = lvl[u] + 1;
-            up[v][0] = u;
-            for(int i = 1; i < lg && ~up[v][i - 1]; i++) {
-                up[v][i] = up[up[v][i - 1]][i - 1];
-            }
             par[v] = u;
+            g[v].erase(find(g[v].begin(), g[v].end(), u));
             dfs(v);
             sz[u] += sz[v];
             if(sz[v] > sz[g[u][0]])
                 swap(v, g[u][0]);
+        }
+    }
+    void dfs2(int u) {
+        in[u] = cntDfs++;
+        seq[in[u]] = u;
+        for(int v : g[u]) {
+            top[v] = v == g[u][0]? top[u]: v;
+            dfs2(v);
         }
         out[u] = cntDfs - 1;
     }
 
     int jump(int u, int k) {
         if(k > lvl[u]) return -1;
-        while(k) {
-            u = up[u][Log[k]];
-            k ^= 1 << Log[k];
+
+        int d = lvl[u] - k;
+        while (lvl[top[u]] > d) {
+            u = par[top[u]];
         }
-        return u;
+
+        return seq[in[u] - lvl[u] + d];
     }
 
     bool isAncester(int u, int v) {
@@ -943,14 +942,14 @@ struct tree {
     int lca(int u, int v) {
         if(lvl[u] > lvl[v]) swap(u, v);
         if(isAncester(u, v)) return u;
-        v = jump(v, lvl[v] - lvl[u]);
-        for(int j = lg - 1; j >= 0; j--) {
-            if(up[u][j] != up[v][j]) {
-                u = up[u][j];
-                v = up[v][j];
+        while (top[u] != top[v]) {
+            if (lvl[top[u]] > lvl[top[v]]) {
+                u = par[top[u]];
+            } else {
+                v = par[top[v]];
             }
         }
-        return up[u][0];
+        return lvl[u] < lvl[v]? u: v;
     }
 
     int dis(int u, int v) {
