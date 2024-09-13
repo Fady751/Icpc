@@ -637,6 +637,44 @@ struct BIT { // 1-based
     }
 };
 
+template<typename T>
+class BitR { // 0-based
+    int n;
+    vector<T> BIT1, BIT2;
+    void add(vector<T>& a, int i, T val) {
+        for(; i < n; i += i & -i)
+            a[i] += val;
+    }
+
+public:
+    BitR(int size) : n(size + 5), BIT1(size + 5), BIT2(size + 5) { }
+
+    void add(int l, int r, T val) {
+        l++, r++;
+        add(BIT1, l, val);
+        add(BIT1, r + 1, -val);
+        add(BIT2, l, val * (l - 1));
+        add(BIT2, r + 1, -val * r);
+    }
+
+    T query(int ii) {
+        ii++;
+        T sum = 0;
+        int i = ii;
+        for(; i > 0; i -= i & -i)
+            sum += BIT1[i];
+        sum *= ii;
+        i = ii;
+        for(; i > 0; i -= i & -i)
+            sum -= BIT2[i];
+        return sum;
+    }
+
+    T range(int l, int r) {
+        return query(r) - query(l - 1);
+    }
+};
+
 class DSU {
     vector<int> p;
 public: //1-based
