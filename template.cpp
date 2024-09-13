@@ -640,33 +640,36 @@ struct BIT { // 1-based
 template<typename T>
 class BitR { // 0-based
     int n;
-    vector<T> BIT1, BIT2;
-    void add(vector<T>& a, int i, T val) {
+    vector<T> f, s;
+    void add(vector<T> &a, int i, T val) {
         for(; i < n; i += i & -i)
             a[i] += val;
     }
-
 public:
-    BitR(int size) : n(size + 5), BIT1(size + 5), BIT2(size + 5) { }
+    BitR(int n) : n(n + 5), f(n + 6), s(n + 6) { }
+
+    void add(int i, T val) {
+        add(s, i + 1, -val);
+    }
 
     void add(int l, int r, T val) {
         l++, r++;
-        add(BIT1, l, val);
-        add(BIT1, r + 1, -val);
-        add(BIT2, l, val * (l - 1));
-        add(BIT2, r + 1, -val * r);
+        add(f, l, val);
+        add(f, r + 1, -val);
+        add(s, l, val * (l - 1));
+        add(s, r + 1, -val * r);
     }
 
     T query(int ii) {
         ii++;
         T sum = 0;
         int i = ii;
-        for(; i > 0; i -= i & -i)
-            sum += BIT1[i];
+        for(; i > 0; i ^= i & -i)
+            sum += f[i];
         sum *= ii;
         i = ii;
-        for(; i > 0; i -= i & -i)
-            sum -= BIT2[i];
+        for(; i > 0; i ^= i & -i)
+            sum -= s[i];
         return sum;
     }
 
