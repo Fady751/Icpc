@@ -788,11 +788,15 @@ public:
         assert(x == 1);
         return x0;
     }
-    inline static T fastPower(T base, T power) {
-        if (power < 0) return 0;
-        if (power == 0) return 1;
-        T temp = fastPower(base, power >> 1);
-        return static_cast<T>((static_cast<cast>(temp) * static_cast<cast>(temp) * (power & 1 ? static_cast<cast>(base) : static_cast<cast>(1))) % mod);
+
+    inline static T fastPower(cast b, int64_t p) {
+        cast res = 1;
+        while(p > 0) {
+            if(p & 1) res = b * res % mod;
+            b = b * b % mod;
+            p >>= 1;
+        }
+        return static_cast<T>(res);
     }
 private:
     static T mod;
