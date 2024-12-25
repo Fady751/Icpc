@@ -1718,6 +1718,189 @@ struct HullDynamic : public multiset<Line> { // will maintain upper hull for max
     }
 };
 
+namespace bigNumber {
+    using i128 = __int128_t;
+
+    i128 mul128(i128 a, i128 b, i128 mod) {
+        i128 result = 0;
+        for(a %= mod; b > 0; a <<= 1, b >>= 1) {
+            a >= mod? a -= mod: 0;
+            if(b & 1) {
+                result += a, result >= mod? result -= mod: 0;
+            }
+        }
+        return result;
+    }
+    inline i128 F(i128 x, i128 c, i128 mod) {
+        return (mul128(x, x, mod) + c) % mod;
+    }
+
+    inline i128 _abs(i128 N) {
+        return N < 0? -N: N;
+    }
+
+    i128 Pollard_Brent(i128 N) {
+        if (N & 1 ^ 1)
+            return 2;
+
+        static i128 rng = 0xdeafbeefff;
+        uint64_t a = rng * 6364136223846793005ull + 1442695040888963407ull;
+        uint64_t b = a * 6364136223846793005ull + 1442695040888963407ull;
+        rng = (a + b) ^ (a * b);
+
+        i128 X0 = 1 + a % (N - 1);
+        i128 C = 1 + b % (N - 1);
+        i128 X = X0;
+        i128 gcd_val = 1;
+        i128 q = 1;
+        i128 Xs, Xt;
+        i128 m = 128;
+        i128 L = 1;
+        while(gcd_val == 1) {
+            Xt = X;
+            for (size_t i = 1; i < L; i++)
+                X = F(X, C, N);
+
+            int k = 0;
+            while (k < L && gcd_val == 1) {
+                Xs = X;
+                for (size_t i = 0; i < m && i < L - k; i++) {
+                    X = F(X, C, N);
+                    q = mul128(q, _abs(Xt - X), N);
+                }
+                gcd_val = __gcd(q, N);
+                k += m;
+            }
+            L += L;
+        }
+        if (gcd_val == N) {
+            do {
+                Xs = F(Xs, C, N);
+                gcd_val = __gcd(_abs(Xs - Xt), N);
+            } while (gcd_val == 1);
+        }
+        return gcd_val;
+    }
+
+    i128 Mod_Bin_Exp(i128 N, i128 power, i128 mod) {
+        if (N % mod == 0)
+            return 0;
+        if (N == 1 || power == 0)
+            return 1;
+
+        if (N >= mod)
+            N -= mod;
+
+        i128 res{1};
+        while (power) {
+            if (power & 1)
+                res = mul128(res, N, mod);
+
+            N = mul128(N, N, mod);
+            power >>= 1;
+        }
+        return res;
+    }
+
+    bool Check_Composite(i128 N, i128 a, i128 d, int s) {
+        i128 X = Mod_Bin_Exp(a, d, N);
+        if (X == 1 || X == N - 1)
+            return false;
+
+        for (int r = 1; r < s; r++) {
+            X = mul128(X, X, N);
+            if (X == 1 || X == N - 1)
+                return false;
+        }
+        return true;
+    }
+
+    bool Miller_Rabin(i128 N)
+    {
+        i128 d = N - 1;
+        int s{};
+        while (~s & 1)
+            d >>= 1, ++s;
+
+        for (int a : {11, 13, 17}) {
+            if (N == a)
+                return true;
+            if (Check_Composite(N, a, d, s))
+                return false;
+        }
+        return true;
+    }
+
+    template<typename T>
+    bool Is_Prime(T N) {
+        if(N < 2) return false;
+        if(N <= 3 || N == 5 || N == 7) return true;
+        if(N & 1 ^ 1 || N % 3 == 0 || N % 5 == 0 || N % 7 == 0)
+            return false;
+
+        return Miller_Rabin(N);
+    }
+
+    vector<pair<i128, int>> prime_factorize(i128 n) {
+        if(n == 1) return {};
+
+        vector<i128> all;
+        function<void(i128)> rec = [&all, &rec](i128 x) -> void {
+            if (x == 1) return;
+            if (!Is_Prime(x)) {
+                i128 y = Pollard_Brent(x);
+                rec(y);
+                rec(x / y);
+                return;
+            }
+            all.push_back(x);
+        };
+        rec(n);
+        sort(all.begin(), all.end());
+
+        vector<pair<i128, int>> res{{all[0], 1}};
+        for(int i = 1; i < all.size(); i++) {
+            if(all[i] == all[i - 1])
+                res.back().second++;
+            else
+                res.emplace_back(all[i], 1);
+        }
+        return res;
+    }
+
+    inline istream &operator>>(istream &is, i128 &x) {
+        string s;
+        is >> s;
+        x = 0;
+        bool negative = false;
+        int i = 0;
+        if (s[0] == '-')
+            negative = true, i++;
+        while(i < s.size())
+            x = x * 10 + (s[i++] - '0');
+        if(negative)
+            x = -x;
+        return is;
+    }
+
+    inline ostream &operator<<(ostream &os, i128 x) {
+        if (x == 0)
+            return os << '0';
+        if (x < 0)
+            os << '-', x = -x;
+        string s;
+        while (x > 0) {
+            s += char(x % 10 + '0');
+            x /= 10;
+        }
+        for(int i = int(s.size()) - 1; ~i; i--) {
+            os << s[i];
+        }
+        return os;
+    }
+}
+using namespace bigNumber;
+
 void solve() {
 
 }
