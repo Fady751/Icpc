@@ -1719,10 +1719,10 @@ struct HullDynamic : public multiset<Line> { // will maintain upper hull for max
 };
 
 namespace bigNumber {
-    using i128 = __int128_t;
+    using u128 = __uint128_t;
 
-    i128 mul128(i128 a, i128 b, i128 mod) {
-        i128 result = 0;
+    u128 mul128(u128 a, u128 b, u128 mod) {
+        u128 result = 0;
         for(a %= mod; b > 0; a <<= 1, b >>= 1) {
             a >= mod? a -= mod: 0;
             if(b & 1) {
@@ -1731,42 +1731,91 @@ namespace bigNumber {
         }
         return result;
     }
-    inline i128 F(i128 x, i128 c, i128 mod) {
-        return (mul128(x, x, mod) + c) % mod;
+
+    static u128 mult(u128 x, u128 y, u128 &high) {
+        const size_t shift = sizeof(x) * 4;
+        u128 a = x >> shift, b = (x << shift) >> shift;
+        u128 c = y >> shift, d = (y << shift) >> shift;
+        u128 ac = a * c;
+        u128 ad = a * d;
+        u128 bc = b * c;
+        u128 bd = b * d;
+        u128 carry = ((ad << shift) >> shift) + ((bc << shift) >> shift) + (bd >> shift);
+        high = ac + (ad >> shift) + (bc >> shift) + (carry >> shift);
+        return (ad << shift) + (bc << shift) + bd;
     }
 
-    inline i128 _abs(i128 N) {
-        return N < 0? -N: N;
+    u128 montmul(u128 a, u128 b, u128 N, u128 N_neg_inv) {
+        u128 Th, Tl, m, mNh, mNl;
+
+        Tl = mult(a, b, Th);
+
+        m = Tl * N_neg_inv;
+
+        mNl = mult(m, N, mNh);
+
+        bool lc = Tl + mNl < Tl;
+        u128 th = Th + mNh + lc;
+        bool hc = (th < Th) || (th == Th && lc);
+
+        if(hc > 0 || th >= N) th = th - N;
+
+        return th;
     }
 
-    i128 Pollard_Brent(i128 N) {
+
+    inline pair<u128, u128> mont_modinv(u128 m) {
+        const size_t shift = sizeof(m) * 8 - 1;
+        u128 a = u128(1) << shift;
+        u128 u = 1;
+        u128 v = 0;
+
+        while(a) {
+            a >>= 1;
+            if(u & 1) {
+                u = ((u ^ m) >> 1) + (u & m);
+                v = (v >> 1) + (u128(1) << shift);
+            } else {
+                u >>= 1;
+                v >>= 1;
+            }
+        }
+
+        return {u, v};
+    }
+
+    u128 Pollard_Brent(u128 N) {
         if (N & 1 ^ 1)
             return 2;
 
-        static i128 rng = 0xdeafbeefff;
+        static u128 rng = 0xdeafbeefff;
         uint64_t a = rng * 6364136223846793005ull + 1442695040888963407ull;
         uint64_t b = a * 6364136223846793005ull + 1442695040888963407ull;
         rng = (a + b) ^ (a * b);
 
-        i128 X0 = 1 + a % (N - 1);
-        i128 C = 1 + b % (N - 1);
-        i128 X = X0;
-        i128 gcd_val = 1;
-        i128 q = 1;
-        i128 Xs, Xt;
-        i128 m = 128;
-        i128 L = 1;
+        u128 X0 = 1 + a % (N - 1);
+        u128 C = 1 + b % (N - 1);
+        u128 X = X0;
+        u128 gcd_val = 1;
+        u128 q = 1;
+        u128 Xs, Xt;
+        u128 m = 128;
+        u128 inv = mont_modinv(N).second;
+        u128 L = 1;
         while(gcd_val == 1) {
             Xt = X;
-            for (size_t i = 1; i < L; i++)
-                X = F(X, C, N);
+            for (size_t i = 1; i < L; i++) {
+                X = montmul(X, X, N, inv);
+                X = X >= N - C? X - N + C: X + C;
+            }
 
             int k = 0;
             while (k < L && gcd_val == 1) {
                 Xs = X;
                 for (size_t i = 0; i < m && i < L - k; i++) {
-                    X = F(X, C, N);
-                    q = mul128(q, _abs(Xt - X), N);
+                    X = montmul(X, X, N, inv);
+                    X = X >= N - C? X - N + C: X + C;
+                    q = montmul(q, Xt > X? Xt - X: X - Xt, N, inv);
                 }
                 gcd_val = __gcd(q, N);
                 k += m;
@@ -1775,14 +1824,15 @@ namespace bigNumber {
         }
         if (gcd_val == N) {
             do {
-                Xs = F(Xs, C, N);
-                gcd_val = __gcd(_abs(Xs - Xt), N);
+                Xs = montmul(Xs, Xs, N, inv);
+                Xs = Xs >= N - C? Xs - N + C: Xs + C;
+                gcd_val = __gcd(Xs > Xt? Xs - Xt: Xt - Xs, N);
             } while (gcd_val == 1);
         }
         return gcd_val;
     }
 
-    i128 Mod_Bin_Exp(i128 N, i128 power, i128 mod) {
+    u128 Mod_Bin_Exp(u128 N, u128 power, u128 mod) {
         if (N % mod == 0)
             return 0;
         if (N == 1 || power == 0)
@@ -1791,7 +1841,7 @@ namespace bigNumber {
         if (N >= mod)
             N -= mod;
 
-        i128 res{1};
+        u128 res{1};
         while (power) {
             if (power & 1)
                 res = mul128(res, N, mod);
@@ -1802,8 +1852,8 @@ namespace bigNumber {
         return res;
     }
 
-    bool Check_Composite(i128 N, i128 a, i128 d, int s) {
-        i128 X = Mod_Bin_Exp(a, d, N);
+    bool Check_Composite(u128 N, u128 a, u128 d, int s) {
+        u128 X = Mod_Bin_Exp(a, d, N);
         if (X == 1 || X == N - 1)
             return false;
 
@@ -1815,9 +1865,9 @@ namespace bigNumber {
         return true;
     }
 
-    bool Miller_Rabin(i128 N)
+    bool Miller_Rabin(u128 N)
     {
-        i128 d = N - 1;
+        u128 d = N - 1;
         int s{};
         while (~s & 1)
             d >>= 1, ++s;
@@ -1841,14 +1891,14 @@ namespace bigNumber {
         return Miller_Rabin(N);
     }
 
-    vector<pair<i128, int>> prime_factorize(i128 n) {
+    vector<pair<u128, int>> prime_factorize(u128 n) {
         if(n == 1) return {};
 
-        vector<i128> all;
-        function<void(i128)> rec = [&all, &rec](i128 x) -> void {
+        vector<u128> all;
+        function<void(u128)> rec = [&all, &rec](u128 x) -> void {
             if (x == 1) return;
             if (!Is_Prime(x)) {
-                i128 y = Pollard_Brent(x);
+                u128 y = Pollard_Brent(x);
                 rec(y);
                 rec(x / y);
                 return;
@@ -1858,7 +1908,7 @@ namespace bigNumber {
         rec(n);
         sort(all.begin(), all.end());
 
-        vector<pair<i128, int>> res{{all[0], 1}};
+        vector<pair<u128, int>> res{{all[0], 1}};
         for(int i = 1; i < all.size(); i++) {
             if(all[i] == all[i - 1])
                 res.back().second++;
@@ -1868,7 +1918,7 @@ namespace bigNumber {
         return res;
     }
 
-    inline istream &operator>>(istream &is, i128 &x) {
+    inline istream &operator>>(istream &is, u128 &x) {
         string s;
         is >> s;
         x = 0;
@@ -1883,7 +1933,7 @@ namespace bigNumber {
         return is;
     }
 
-    inline ostream &operator<<(ostream &os, i128 x) {
+    inline ostream &operator<<(ostream &os, u128 x) {
         if (x == 0)
             return os << '0';
         if (x < 0)
