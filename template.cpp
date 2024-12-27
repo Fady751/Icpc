@@ -1949,7 +1949,7 @@ namespace bigNumber {
         return os;
     }
 }
-using namespace bigNumber;
+//using namespace bigNumber;
 
 void solve() {
 
