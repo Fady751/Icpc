@@ -3464,8 +3464,9 @@ int main()
 //    freopen("output.txt", "w", stdout);
     cint N;
     fac_params config = {0};
-    char *n = calloc(1000, 1); // the string to factor in base 10.
-    gets(n);
+    char *n = calloc(100, 1); // the string to factor in base 10.
+//    gets(n);
+    scanf("%s", n);
     while (n[0] != '0')
     {
         const int bits = 64 + 4 * (int)strlen(n);
@@ -3475,8 +3476,9 @@ int main()
         free(answer);                              // release answer memory.
         free(N.mem);                               // release number memory.
         free(n);
-        n = calloc(1000, 1);
-        gets(n);
+        n = calloc(100, 1);
+//        gets(n);
+        scanf("%s", n);
     }
 
     return 0;
