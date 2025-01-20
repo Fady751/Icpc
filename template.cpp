@@ -1951,6 +1951,63 @@ namespace bigNumber {
 }
 //using namespace bigNumber;
 
+namespace combinatorics {
+    int mod = 1e9 + 7, MXS_ = 1;
+    vector<int> fac_(1, 1), inv_(1, 1);
+
+    int fp(int b, int p = mod - 2) {
+        int ans = 1;
+        while(p) {
+            if(p & 1) ans = int(ans * 1LL * b % mod);
+            b = int(b * 1LL * b % mod);
+            p >>= 1;
+        }
+        return ans;
+    }
+
+    void up_(int nw) {
+        nw = max(MXS_ << 1, 1 << (__lg(nw) + 1));
+        fac_.resize(nw), inv_.resize(nw);
+        for(int i = MXS_; i < fac_.size(); i++)
+            fac_[i] = int(fac_[i - 1] * 1LL * i % mod);
+
+        inv_.back() = fp(fac_.back(), mod - 2);
+        for(int i = int(inv_.size()) - 2; i >= MXS_; i--)
+            inv_[i] = int(inv_[i + 1] * 1LL * (i + 1) % mod);
+        MXS_ = nw;
+    }
+
+    inline int nCr(int n, int r) {
+        if(r < 0 || r > n) return 0;
+        if(n >= MXS_) up_(n);
+        return int(fac_[n] * 1LL * inv_[r] % mod * inv_[n - r] % mod);
+    }
+    inline int nCr1(int n, int r) {
+        if(r < 0 || r > n) return 0;
+        r = min(r, n - r);
+        if(r >= MXS_) up_(r);
+        int ans = inv_[r];
+        for(int i = n - r + 1; i <= n; i++) {
+            ans = int(ans * 1LL * i % mod);
+        }
+        return ans;
+    }
+    inline int nPr(int n, int r) {
+        if(r < 0 || r > n) return 0;
+        if(n >= MXS_) up_(n);
+        return int(fac_[n] * 1LL * inv_[n - r] % mod);
+    }
+
+    inline int add(int x, int y) {
+        x = y < 0? x + y + mod: x + y;
+        return x >= mod? x - mod: x;
+    }
+    inline int mul(int x, int y) {
+        return int(x * 1LL * y % mod);
+    }
+}
+//using namespace combinatorics;
+
 void solve() {
 
 }
