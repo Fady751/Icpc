@@ -50,14 +50,6 @@ namespace numberTheory {
     using cast = long long;
     type mod = static_cast<type>(1e9) + 7;
 
-    vector<type> fac;
-    void buildFac(int n){
-        fac.resize(n + 1);
-        fac[0] = 1;
-        for (int i = 1; i <= n; i++)
-            fac[i] = static_cast<type>((static_cast<cast>(fac[i - 1]) * i) % mod);
-    }
-
     vector<int> sieve;
     void buildSieve(int n){
         sieve.resize(n + 1);
@@ -69,6 +61,7 @@ namespace numberTheory {
             }
         }
     }
+
     vector<array<int, 2>> getFac(int _n) {
         if(_n < 2) return {};
         vector<array<int, 2>> _res;
@@ -82,20 +75,18 @@ namespace numberTheory {
         }
         return _res;
     }
+
     vector<int> getDivisors(int _n) {
         auto _fac = getFac(_n);
-        vector<int> res;
-        function<void(int, int)> slv = [&](int i, int cur) -> void {
-            if (i == _fac.size()) {
-                res.push_back(cur);
-                return;
-            }
-            for (int _ = 0; _ <= _fac[i][1]; ++_) {
-                slv(i + 1, cur);
-                cur *= _fac[i][0];
-            }
-        };
-        slv(0, 1);
+        int cnt = 1;
+        for(auto [pr, pw] : _fac) cnt *= pw + 1;
+        vector<int> res(1, 1); res.reserve(cnt);
+
+        for(auto [pr, pw] : _fac)
+            for(int i = int(res.size()) - 1; i >= 0; i--)
+                for(int b = pr, j = 0; j < pw; j++, b *= pr)
+                    res.push_back(res[i] * b);
+        sort(res.begin(), res.end());
         return res;
     }
 
@@ -107,13 +98,6 @@ namespace numberTheory {
             if (num % i == 0 || num % (i + 2) == 0)
                 return false;
         return true;
-    }
-
-    type fastPower(type base, type power, type m = mod) {
-        if (power < 0) return 0;
-        if (power == 0) return 1;
-        type temp = fastPower(base, power >> 1, m);
-        return static_cast<type>((static_cast<cast>(temp) * temp * (power & 1 ? base : 1)) % m);
     }
 
     void moveOneStep(type &a, type &b, type q) {
@@ -144,95 +128,6 @@ namespace numberTheory {
         return (x0 + mod) % mod;
     }
 
-    type nCr(type n, type r) {
-        if (r > n) return 0;
-        return static_cast<type>((static_cast<cast>(fac[n]) * modularInverse(static_cast<type>((static_cast<cast>(fac[n - r]) * fac[r]) % mod))) % mod);
-    }
-
-    type nPr(type n, type r) {
-        if (r > n) return 0;
-        return static_cast<type>((static_cast<cast>(fac[n]) * modularInverse(fac[n - r])) % mod);
-    }
-    template<typename T = int>
-    struct equation { // n0 * x + n1 * y == n
-        bool valid;
-        T x, y, n0, n1, n, g;
-        short sign_n0g{}, sign_n1g{};
-        explicit equation(T a, T b, T n) : n0(a), n1(b), n(n), x(1), y(0) { // must a != 0 && b != 0
-            T q, x1 = 0, y1 = 1, t;
-            while(b) {
-                q = a / b;
-                t = b, b = a - q * b, a = t;
-                t = x1, x1 = x - q * x1, x = t;
-                t = y1, y1 = y - q * y1, y = t;
-            }
-            g = a;
-
-            valid = n % g == 0;
-            if(valid){
-                x *= n / g;
-                y *= n / g;
-                stepX = n1 / g;
-                stepY = n0 / g;
-                sign_n0g = (stepY < 0 ? -1 : 1);
-                sign_n1g = (stepX < 0 ? -1 : 1);
-            }
-        }
-        T stepX{}, stepY{};
-        void shift(int64_t cnt) {
-            // n0 * (x + n1 / g) + n1 * (y - n0 / g) == n
-            x += stepX * cnt;
-            y -= stepY * cnt;
-        }
-        void toX(int64_t new_x, bool f = true) {
-            // f == 0? x <= new_x: x >= new_x
-            if(stepX == 0) return;
-            int64_t dif = (new_x - x) / stepX;
-            shift(dif);
-            if(x < new_x && f) {
-                shift(sign_n1g);
-                assert(x >= new_x);
-            }
-            else if(x > new_x && !f) {
-                shift(-sign_n1g);
-                assert(x <= new_x);
-            }
-        }
-
-        void toY(int64_t new_y, bool f = true) {
-            // f == 0? y <= new_y: y >= new_y
-            if(stepY == 0) return;
-            int64_t dif = (y - new_y) / stepY;
-            shift(dif);
-            if(y < new_y && f) {
-                shift(-sign_n0g);
-                assert(y >= new_y);
-            }
-            else if(y > new_y && !f) {
-                shift(sign_n0g);
-                assert(y <= new_y);
-            }
-        }
-        array<T, 3> count(T lx, T rx, T ly, T ry) { // {cnt, lx, rx}
-            toX(lx);
-            if(x > rx) return {};
-            lx = x;
-            toX(rx, false);
-            rx = x;
-
-            toY(ly);
-            if(y > ry) return {};
-            ly = x;
-            toY(ry, false);
-            ry = x;
-
-            if(ly > ry) swap(ly, ry);
-            lx = max(lx, ly);
-            rx = min(rx, ry);
-            if(lx > rx) return {};
-            return {(rx - lx) / abs(stepX) + 1, lx, rx};
-        }
-    };
     map<int64_t, int> dpFib;
     int fib(int64_t n) {
         if(n == 0) return 0;
@@ -254,6 +149,87 @@ namespace numberTheory {
     }
 }
 //using namespace numberTheory;
+
+template<typename T = int>
+struct equation { // n0 * x + n1 * y == n
+    bool valid;
+    T x, y, n0, n1, n, g;
+    short sign_n0g{}, sign_n1g{};
+    explicit equation(T a, T b, T n) : n0(a), n1(b), n(n), x(1), y(0) { // must a != 0 && b != 0
+        T q, x1 = 0, y1 = 1, t;
+        while(b) {
+            q = a / b;
+            t = b, b = a - q * b, a = t;
+            t = x1, x1 = x - q * x1, x = t;
+            t = y1, y1 = y - q * y1, y = t;
+        }
+        g = a;
+
+        valid = n % g == 0;
+        if(valid){
+            x *= n / g;
+            y *= n / g;
+            stepX = n1 / g;
+            stepY = n0 / g;
+            sign_n0g = (stepY < 0 ? -1 : 1);
+            sign_n1g = (stepX < 0 ? -1 : 1);
+        }
+    }
+    T stepX{}, stepY{};
+    void shift(int64_t cnt) {
+        // n0 * (x + n1 / g) + n1 * (y - n0 / g) == n
+        x += stepX * cnt;
+        y -= stepY * cnt;
+    }
+    void toX(int64_t new_x, bool f = true) {
+        // f == 0? x <= new_x: x >= new_x
+        if(stepX == 0) return;
+        int64_t dif = (new_x - x) / stepX;
+        shift(dif);
+        if(x < new_x && f) {
+            shift(sign_n1g);
+            assert(x >= new_x);
+        }
+        else if(x > new_x && !f) {
+            shift(-sign_n1g);
+            assert(x <= new_x);
+        }
+    }
+
+    void toY(int64_t new_y, bool f = true) {
+        // f == 0? y <= new_y: y >= new_y
+        if(stepY == 0) return;
+        int64_t dif = (y - new_y) / stepY;
+        shift(dif);
+        if(y < new_y && f) {
+            shift(-sign_n0g);
+            assert(y >= new_y);
+        }
+        else if(y > new_y && !f) {
+            shift(sign_n0g);
+            assert(y <= new_y);
+        }
+    }
+    array<T, 3> count(T lx, T rx, T ly, T ry) { // {cnt, lx, rx}
+        toX(lx);
+        if(x > rx) return {};
+        lx = x;
+        toX(rx, false);
+        rx = x;
+
+        toY(ly);
+        if(y > ry) return {};
+        ly = x;
+        toY(ry, false);
+        ry = x;
+
+        if(ly > ry) swap(ly, ry);
+        lx = max(lx, ly);
+        rx = min(rx, ry);
+        if(lx > rx) return {};
+        return {(rx - lx) / abs(stepX) + 1, lx, rx};
+    }
+};
 
 template<class T = int64_t>
 class lazySegment {
