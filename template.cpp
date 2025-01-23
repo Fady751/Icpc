@@ -376,8 +376,8 @@ class segmentTree {
             delete x;
         }
     }
-public://0-based
-    explicit segmentTree(int n = 1000000000) : size(n), root(new node()) { }
+public:
+    explicit segmentTree(int n = 1'000'000'000) : size(n), root(new node()) { }
 
     template<class U>
     explicit segmentTree(U &arr) : size(int(arr.size()) - 1), root(new node()) {
@@ -392,25 +392,18 @@ public://0-based
     info get(int l, int r) {
         return get(root, 0, size, l, r);
     }
-    info operator[](int i) {
-        return get(root, 0, size, i, i);
-    }
-    void clear() {
-        del(root);
-        root = new node();
-    }
-    void resize(int sz) {
-        size = sz;
-    }
 };
 
 struct info {
     int64_t sum;
-    info(int64_t x = 0LL) {
+    info(int64_t x) {
         sum = x;
     }
-    info operator+(const info &o) const {
-        return sum + o.sum;
+    info() { // default value
+        sum = 0;
+    }
+    friend info operator+(const info &l, const info &r) {
+        return l.sum + r.sum;
     }
 };
 template<> info segmentTree<info>::defaultVal = info();
@@ -655,7 +648,7 @@ public:
 
 class DSU {
     vector<int> p;
-public: //1-based
+public: //0-based
     explicit DSU(int _n) : p(_n + 1, -1) { }
     int find(int i) {
         return p[i] < 0? i: p[i] = find(p[i]);
