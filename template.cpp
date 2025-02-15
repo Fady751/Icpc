@@ -1652,38 +1652,32 @@ struct point : public array<ld, 2> {
     }
 };
 
-const int is_query = -(1<<31);
 struct Line {
-    int m, b;
-    mutable function<const Line*()> succ;
-    bool operator<(const Line& rhs) const {
-        if (rhs.b != is_query) return m < rhs.m;
-        const Line* s = succ();
-        if (!s) return false;
-        return b - s->b < (s->m - m) * 1LL * rhs.m;
-    }
+    mutable int64_t m, c, p;
+    bool operator<(const Line& o) const { return m < o.m; }
+    bool operator<(int64_t x) const { return p < x; }
 };
-struct HullDynamic : public multiset<Line> { // will maintain upper hull for maximum
-    bool bad(iterator y) {
-        auto z = next(y);
-        if (y == begin()) {
-            if (z == end()) return false;
-            return y->m == z->m && y->b <= z->b;
-        }
-        auto x = prev(y);
-        if (z == end()) return y->m == x->m && y->b <= x->b;
-        return (x->b - y->b) * 1LL * (z->m - y->m) >= (y->b - z->b) * 1LL * (y->m - x->m);
+struct HullDynamic : multiset<Line, less<>> {
+    const int64_t inf = 2e18;
+    int64_t div(int64_t a, int64_t b) {
+        return a / b - ((a ^ b) < 0 && a % b); }
+    bool isect(iterator x, iterator y) {
+        if (y == end()) { x->p = inf; return false; }
+        if (x->m == y->m) x->p = x->c > y->c ? inf : -inf;
+        else x->p = div(y->c - x->c, x->m - y->m);
+        return x->p >= y->p;
     }
-    void insert_line(int m, int b) {
-        auto y = insert({ m, b });
-        y->succ = [=] { return next(y) == end() ? nullptr : &*next(y); };
-        if (bad(y)) { erase(y); return; }
-        while (next(y) != end() && bad(next(y))) erase(next(y));
-        while (y != begin() && bad(prev(y))) erase(prev(y));
+    void add(int64_t k, int64_t m) {
+        auto z = insert({k, m, 0}), y = z++, x = y;
+        while (isect(y, z)) z = erase(z);
+        if (x != begin() && isect(--x, y)) isect(x, y = erase(y));
+        while ((y = x) != begin() && (--x)->p >= y->p)
+            isect(x, erase(y));
     }
-    long long eval(int x) {
-        auto l = *lower_bound((Line) { x, is_query });
-        return l.m * 1LL * x + l.b;
+    int64_t query(int64_t x) {
+        assert(!empty());
+        auto l = *lower_bound(x);
+        return l.m * x + l.c;
     }
 };
 
