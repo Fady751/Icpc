@@ -1971,6 +1971,49 @@ namespace combinatorics {
 }
 //using namespace combinatorics;
 
+using cd = complex<double>;
+double pi = acos(-1);
+void fft(vector<cd> &a, bool inverse) {
+    if(a.size() == 1) return;
+    int n = int(a.size()) >> 1;
+    vector<cd> x(n), y(n);
+    for(int i = 0; i < n; i++) {
+        x[i] = a[i << 1];
+        y[i] = a[i << 1 | 1];
+    }
+    fft(x, inverse), fft(y, inverse);
+
+    double angel = pi / n * (inverse? -1: 1);
+    cd w(1), w1(cos(angel), sin(angel));
+
+    for(int i = 0; i < n; i++, w *= w1) {
+        a[i] = x[i] + w * y[i];
+        a[i + n] = x[i] - w * y[i];
+        if(inverse) a[i] /= 2, a[i + n] /= 2;
+    }
+}
+vector<int64_t> mul(vector<int> &a, vector<int> &b) {
+    int N = 1 << (__lg(a.size() + b.size()) + 1);
+
+    vector<cd> ta(a.begin(), a.end()), tb(b.begin(), b.end());
+    ta.resize(N);
+    tb.resize(N);
+
+    fft(ta, false), fft(tb, false);
+
+    for(int i = 0; i < N; i++)
+        ta[i] *= tb[i];
+
+    fft(ta, true);
+
+    vector<int64_t> ans(N);
+    for(int i = 0; i < N; i++) {
+        ans[i] = (int64_t)round(ta[i].real());
+    }
+
+    return ans;
+}
+
 void solve() {
 
 }
