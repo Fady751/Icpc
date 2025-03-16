@@ -2063,6 +2063,28 @@ namespace FFT {
         return ans;
     }
 
+    vector<int> string_matching(string &s, string &t) {
+        int n = s.size(), m = t.size();
+        vector<int> s1(n), s2(n), s3(n);
+        for(int i = 0; i < n; i++) {
+            s1[i] = s[i] == '?' ? 0 : s[i] - 'a' + 1; // assign any non zero number for non '?'s
+            s2[i] = s1[i] * s1[i];
+            s3[i] = s1[i] * s2[i];
+        }
+        vector<int> t1(m), t2(m), t3(m);
+        for(int i = 0; i < m; i++) {
+            t1[i] = t[m - i - 1] == '?' ? 0 : t[m - i - 1] - 'a' + 1;
+            t2[i] = t1[i] * t1[i];
+            t3[i] = t1[i] * t2[i];
+        }
+        auto s1t3 = mul(s1, t3);
+        auto s2t2 = mul(s2, t2);
+        auto s3t1 = mul(s3, t1);
+        vector<int> oc;
+        for(int i = m - 1; i < n; i++) if(s1t3[i] - s2t2[i] * 2 + s3t1[i] == 0) oc.push_back(i - m + 1);
+        return oc;
+    }
+
     void ntt(vector<int> &a, bool invert) {
         int n = (int)a.size();
 
