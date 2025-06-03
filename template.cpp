@@ -330,7 +330,39 @@ public://based index 0
     }
 };
 
-template<class info = int64_t>
+template<class info>
+class segmentTreeIterative {
+    int size;
+    vector<info> tree;
+    static info defaultVal;
+public:
+    explicit segmentTreeIterative(int n) : size(n), tree(size << 1, defaultVal) { }
+
+    template<class U>
+    explicit segmentTreeIterative(const U &arr) : size(arr.size()), tree(size << 1, defaultVal) {
+        for(int i = 0; i < arr.size(); i++)
+            tree[i + size] = arr[i];
+        for(int i = size - 1; i > 0; i--)
+            tree[i] = tree[i << 1] + tree[i << 1 | 1];
+    }
+    void set(int i, info v) {
+        tree[i += size] = v;
+        for(i >>= 1; i; i >>= 1)
+            tree[i] = tree[i << 1] + tree[i << 1 | 1];
+    }
+    info get(int l, int r) {
+        info resL = defaultVal, resR = defaultVal;
+        l += size, r += size + 1;
+        while(l < r) {
+            if(l & 1) resL = resL + tree[l++];
+            if(r & 1) resR = tree[--r] + resR;
+            l >>= 1, r >>= 1;
+        }
+        return resL + resR;
+    }
+};
+
+template<class info>
 class segmentTree {
     struct node {
         node *l, *r;
@@ -399,7 +431,7 @@ struct info {
     info(int64_t x) {
         sum = x;
     }
-    info() { // default value
+    info() {
         sum = 0;
     }
     friend info operator+(const info &l, const info &r) {
@@ -561,76 +593,76 @@ public:
 };
 
 template<class T>
-struct BIT { // 1-based
+struct BIT { // 0-based
     int n;
     vector<T> tree;
-    explicit BIT(int size) : n(size), tree(size + 1) { }
+    explicit BIT(int size) : n(size + 5), tree(n + 1) { }
 
     void add(int i, T val) {
-        for (; i <= n; i += i & -i)
+        for (i++; i <= n; i += i & -i)
             tree[i] += val;
     }
 
     T query(int i) {
         T sum = 0;
-        for (; i > 0; i -= i & -i)
+        for (i++; i > 0; i -= i & -i)
             sum += tree[i];
         return sum;
     }
 
     T range(int l, int r) {
+        if(l > r) return T();
         return query(r) - query(l - 1);
     }
 
     int lower_bound(T target) {
-        int i = 0;
-        T curr = 0;
-        for (int mask = 1 << __lg(n); mask > 0; mask >>= 1) {
-            if (i + mask <= n && curr + tree[i + mask] < target) {
-                curr += tree[i += mask];
+        if(target <= 0) return 0;
+        int pos = 0;
+        T sum = 0;
+        for (int i = 1 << __lg(n); i > 0; i >>= 1) {
+            if(pos + i <= n && sum + tree[pos + i] < target) {
+                sum += tree[pos + i];
+                pos += i;
             }
         }
-        return i + 1;
+        return pos;
     }
 };
 
 template<typename T>
-class BitR { // 0-based
+class BITRange { // 0-based
     int n;
-    vector<T> f, s;
-    void add(vector<T> &a, int i, T val) {
-        for(; i < n; i += i & -i)
-            a[i] += val;
+    vector<T> B1, B2;
+
+    void add(vector<T>& bit, int i, T x) {
+        for (++i; i <= n; i += i & -i)
+            bit[i] += x;
     }
+
+    T query(vector<T>& bit, int i) {
+        T res = 0;
+        for (++i; i > 0; i -= i & -i)
+            res += bit[i];
+        return res;
+    }
+
 public:
-    BitR(int n) : n(n + 5), f(n + 6), s(n + 6) { }
+    explicit BITRange(int size) : n(size + 5), B1(n + 2), B2(n + 2) {}
 
-    void add(int i, T val) {
-        add(s, i + 1, -val);
+    void add(int l, int r, T x) {
+        add(B1, l, x);
+        add(B1, r + 1, -x);
+        add(B2, l, x * (l - 1));
+        add(B2, r + 1, -x * r);
     }
+    void add(int i, T x) { add(B2, i, -x); }
 
-    void add(int l, int r, T val) {
-        l++, r++;
-        add(f, l, val);
-        add(f, r + 1, -val);
-        add(s, l, val * (l - 1));
-        add(s, r + 1, -val * r);
-    }
-
-    T query(int ii) {
-        ii++;
-        T sum = 0;
-        int i = ii;
-        for(; i > 0; i ^= i & -i)
-            sum += f[i];
-        sum *= ii;
-        i = ii;
-        for(; i > 0; i ^= i & -i)
-            sum -= s[i];
-        return sum;
+    T query(int i) {
+        return query(B1, i) * i - query(B2, i);
     }
 
     T range(int l, int r) {
+        if (l > r) return T();
         return query(r) - query(l - 1);
     }
 };
@@ -1641,12 +1673,16 @@ struct point : public array<ld, 2> {
     }
 };
 
+ld triangleArea(ld x1, ld y1, ld x2, ld y2, ld x3, ld y3) {
+    return 0.5 * abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));
+}
+
 struct Line {
     mutable int64_t m, c, p;
     bool operator<(const Line& o) const { return m < o.m; }
     bool operator<(int64_t x) const { return p < x; }
 };
-struct HullDynamic : multiset<Line, less<>> {
+struct HullDynamic : multiset<Line, less<>> { // for max value
     const int64_t inf = 2e18;
     int64_t div(int64_t a, int64_t b) {
         return a / b - ((a ^ b) < 0 && a % b); }
@@ -2144,7 +2180,16 @@ int32_t main() {
  ((prime^(power + 1) - 1) / (prime - 1)) * ((prime2^(power2 + 1) - 1) / (prime2 - 1)) * ...
  ===================================================================================================
  num ^ (num2 ^ p) % mod = num ^ ((num2 ^ p) % (mod - 1)) % mod
+ ===================================================================================================
+ a % m == b
+ a and m not coprime
+ g = gcd(a, m)
+ (a / g) % (m / g) = b / g
 
+ a^x % m == b
+ a and m not coprime
+ g = gcd(a, m)
+ (a^(x-1) * (a / g)) % (m / g) = b / g
  ===================================================================================================
  biggest divisors
  735134400 1344 => 2^6 3^3 5^2 7 11 13 17
