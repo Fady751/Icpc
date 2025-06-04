@@ -1055,6 +1055,7 @@ vector<int> z_algo(string s) {
     return z;
 }
 
+// O(n log(n))
 struct suffix {
     int n;
 //    string s;
@@ -1115,6 +1116,178 @@ struct suffix {
         r--;
         int len = __lg(r - l + 1);
         return min(table[len][l], table[len][r - (1 << len) + 1]);
+    }
+};
+
+// O(n)
+class SuffixArray {
+public:
+    SuffixArray(const string &input, char first = 'a') {
+        int n = (int) input.size();
+        s_.resize(n + 1);
+        for (int i = 0; i < n; i++)
+            s_[i] = (input[i] - first) + 1;
+        s_[n] = 0;
+        sa_.assign(n + 1, -1);
+        sa_is(s_, sa_, 27);
+    }
+
+    auto getSA() {
+        return vector(sa_.begin() + 1, sa_.end());
+    }
+
+private:
+    vector<int> s_;
+    vector<int> sa_;
+
+    void sa_is(const vector<int> &s, vector<int> &sa, int alphabet) {
+        int n = (int) s.size();
+        if (n == 1)
+            return void(sa[0] = 0);
+        if (n == 2) {
+            if (s[0] == 0) sa[0] = 0, sa[1] = 1;
+            else sa[0] = 1, sa[1] = 0;
+            return;
+        }
+
+        vector<bool> t(n);
+        t[n - 1] = true;
+        for (int i = n - 2; i >= 0; i--) {
+            if (s[i] < s[i + 1]) t[i] = true;
+            else if (s[i] > s[i + 1]) t[i] = false;
+            else t[i] = t[i + 1];
+        }
+        auto isLMS = [&](int i) {
+            return (i > 0 && t[i] && !t[i - 1]);
+        };
+
+        vector<int> bucket(alphabet, 0);
+        for (int x : s) bucket[x]++;
+        vector<int> bkt_head(alphabet), bkt_tail(alphabet);
+        bkt_head[0] = 0;
+        bkt_tail[0] = bucket[0] - 1;
+        for (int c = 1; c < alphabet; c++) {
+            bkt_head[c] = bkt_head[c - 1] + bucket[c - 1];
+            bkt_tail[c] = bkt_head[c] + bucket[c] - 1;
+        }
+
+        auto induceL = [&]() {
+            vector<int> pos = bkt_head;
+            for (int i = 0; i < n; i++) {
+                int j = sa[i] - 1;
+                if (j >= 0 && !t[j]) {
+                    sa[pos[s[j]]] = j;
+                    pos[s[j]]++;
+                }
+            }
+        };
+        auto induceS = [&]() {
+            vector<int> pos = bkt_tail;
+            for (int i = n - 1; i >= 0; i--) {
+                int j = sa[i] - 1;
+                if (j >= 0 && t[j]) {
+                    sa[pos[s[j]]] = j;
+                    pos[s[j]]--;
+                }
+            }
+        };
+
+        fill(sa.begin(), sa.end(), -1);
+        {
+            vector<int> pos = bkt_tail;
+            for (int i = 0; i < n; i++) {
+                if (isLMS(i)) {
+                    sa[pos[s[i]]] = i;
+                    pos[s[i]]--;
+                }
+            }
+        }
+        induceL();
+        induceS();
+
+        vector<int> LMS;
+        LMS.reserve(n / 2);
+        for (int i = 0; i < n; i++) {
+            if (isLMS(i))
+                LMS.push_back(i);
+        }
+        if (LMS.empty()) {
+            iota(sa.begin(), sa.end(), 0);
+            sort(sa.begin(), sa.end(), [&](int a, int b) {
+                while (a < n && b < n) {
+                    if (s[a] < s[b]) return true;
+                    if (s[a] > s[b]) return false;
+                    a++, b++;
+                }
+                return a == n;
+            });
+            return;
+        }
+
+        vector<int> sortedLMS;
+        sortedLMS.reserve(LMS.size());
+        for (int i = 0; i < n; i++) {
+            if (sa[i] >= 0 && isLMS(sa[i]))
+                sortedLMS.push_back(sa[i]);
+        }
+
+        vector<int> name(n, -1);
+        int curName = 0;
+        name[sortedLMS[0]] = 0;
+
+        auto equalLMS = [&](int a, int b) {
+            int i = 0;
+            while (true) {
+                if (s[a + i] != s[b + i])
+                    return false;
+                bool aIsL = isLMS(a + i);
+                bool bIsL = isLMS(b + i);
+                if (aIsL && bIsL && i > 0)
+                    return true;
+                if (aIsL != bIsL)
+                    return false;
+                i++;
+            }
+        };
+
+        for (int i = 1; i < (int) sortedLMS.size(); i++) {
+            int prev = sortedLMS[i - 1];
+            int curr = sortedLMS[i];
+            if (!equalLMS(prev, curr))
+                ++curName;
+            name[curr] = curName;
+        }
+
+        vector<int> reducedStr;
+        reducedStr.reserve(LMS.size());
+        for (int idx: LMS)
+            reducedStr.push_back(name[idx]);
+
+        vector<int> reducedSA(LMS.size(), -1);
+        if (curName + 1 == (int) LMS.size()) {
+            for (int i = 0; i < (int) LMS.size(); i++) {
+                reducedSA[reducedStr[i]] = i;
+            }
+        } else {
+            sa_is(reducedStr, reducedSA, curName + 1);
+        }
+
+        vector<int> LMS_order(LMS.size());
+        for (int i = 0; i < (int) LMS.size(); i++) {
+            LMS_order[i] = LMS[reducedSA[i]];
+        }
+
+        fill(sa.begin(), sa.end(), -1);
+        {
+            vector<int> pos = bkt_tail;
+            for (int i = (int) LMS_order.size() - 1; i >= 0; i--) {
+                int idx = LMS_order[i];
+                sa[pos[s[idx]]] = idx;
+                pos[s[idx]]--;
+            }
+        }
+        induceL();
+        induceS();
     }
 };
 
