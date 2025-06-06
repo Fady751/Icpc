@@ -1895,232 +1895,129 @@ struct HullDynamic : multiset<Line, less<>> { // for max value
 namespace bigNumber {
     using u128 = __uint128_t;
 
-    u128 mul128(u128 a, u128 b, u128 mod) {
-        u128 result = 0;
-        for(a %= mod; b > 0; a <<= 1, b >>= 1) {
-            a >= mod? a -= mod: 0;
-            if(b & 1) {
-                result += a, result >= mod? result -= mod: 0;
-            }
+    static inline istream& operator>>(istream &is, u128 &x) {
+        string s; is >> s;
+        x = 0;
+        for (char c : s) if (isdigit(c)) x = x * 10 + (c - '0');
+        return is;
+    }
+    static inline ostream& operator<<(ostream &os, u128 x) {
+        if (x == 0) return os << '0';
+        string s;
+        while (x > 0) s += char('0' + (x % 10)), x /= 10;
+        reverse(s.begin(), s.end());
+        return os << s;
+    }
+
+    static inline u128 mul128(u128 a, u128 b, u128 mod) {
+        if(mod <= LLONG_MAX) return a % mod * b % mod;
+        u128 r = 0;
+        a %= mod, b %= mod;
+        if(a < b) swap(a, b);
+        while (b) {
+            if (b & 1) r = r + a >= mod? r + a - mod: r + a;
+            a = a + a >= mod? a + a - mod: a + a;
+            b >>= 1;
         }
-        return result;
+        return r;
     }
 
-    static u128 mult(u128 x, u128 y, u128 &high) {
-        const size_t shift = sizeof(x) * 4;
-        u128 a = x >> shift, b = (x << shift) >> shift;
-        u128 c = y >> shift, d = (y << shift) >> shift;
-        u128 ac = a * c;
-        u128 ad = a * d;
-        u128 bc = b * c;
-        u128 bd = b * d;
-        u128 carry = ((ad << shift) >> shift) + ((bc << shift) >> shift) + (bd >> shift);
-        high = ac + (ad >> shift) + (bc >> shift) + (carry >> shift);
-        return (ad << shift) + (bc << shift) + bd;
-    }
-
-    u128 montmul(u128 a, u128 b, u128 N, u128 N_neg_inv) {
-        u128 Th, Tl, m, mNh, mNl;
-
-        Tl = mult(a, b, Th);
-
-        m = Tl * N_neg_inv;
-
-        mNl = mult(m, N, mNh);
-
-        bool lc = Tl + mNl < Tl;
-        u128 th = Th + mNh + lc;
-        bool hc = (th < Th) || (th == Th && lc);
-
-        if(hc > 0 || th >= N) th = th - N;
-
-        return th;
-    }
-
-
-    inline pair<u128, u128> mont_modinv(u128 m) {
-        const size_t shift = sizeof(m) * 8 - 1;
-        u128 a = u128(1) << shift;
-        u128 u = 1;
-        u128 v = 0;
-
-        while(a) {
-            a >>= 1;
-            if(u & 1) {
-                u = ((u ^ m) >> 1) + (u & m);
-                v = (v >> 1) + (u128(1) << shift);
-            } else {
-                u >>= 1;
-                v >>= 1;
-            }
+    static inline u128 modexp(u128 base, u128 exp, u128 mod) {
+        u128 res = 1;
+        base %= mod;
+        while (exp) {
+            if (exp & 1) res = mul128(res, base, mod);
+            base = mul128(base, base, mod);
+            exp >>= 1;
         }
-
-        return {u, v};
+        return res;
     }
 
-    u128 Pollard_Brent(u128 N) {
-        if (N & 1 ^ 1)
-            return 2;
+    static inline bool millerRabin(u128 n) {
+        if (n < 2) return false;
+        for (u128 p : {2, 3, 5, 7, 11, 13, 17, 19, 23})
+            if(n % p == 0) return n == p;
+        u128 d = n - 1, s = 0;
+        while ((d & 1) == 0) d >>= 1, s++;
+        auto check = [&](u128 a) {
+            u128 x = modexp(a, d, n);
+            if (x == 1 || x == n - 1) return true;
+            for (u128 r = 1; r < s; r++) {
+                x = mul128(x, x, n);
+                if (x == n - 1) return true;
+                if (x == 1) return false;
+            }
+            return false;
+        };
+        for (u128 a : {2, 325, 9375, 28178, 450775, 9780504, 1795265022}) {
+            if(a % n == 0) return true;
+            if(!check(a)) return false;
+        }
+        return true;
+    }
+
+    static u128 pollardBrent(u128 N) {
+        if(N & 1 ^ 1) return 2;
+        auto f = [&](u128 &x, u128 c) {
+            x = (mul128(x, x, N) + c) % N;
+        };
 
         static u128 rng = 0xdeafbeefff;
         uint64_t a = rng * 6364136223846793005ull + 1442695040888963407ull;
         uint64_t b = a * 6364136223846793005ull + 1442695040888963407ull;
         rng = (a + b) ^ (a * b);
 
-        u128 X0 = 1 + a % (N - 1);
+        u128 X0 = 1 + a % (N - 1), X = X0;
         u128 C = 1 + b % (N - 1);
-        u128 X = X0;
-        u128 gcd_val = 1;
-        u128 q = 1;
-        u128 Xs, Xt;
-        u128 m = 128;
-        u128 inv = mont_modinv(N).second;
-        u128 L = 1;
-        while(gcd_val == 1) {
+        u128 g = 1, q = 1, Xs, Xt;
+        int m = 128, L = 1;
+        while(g == 1) {
             Xt = X;
-            for (size_t i = 1; i < L; i++) {
-                X = montmul(X, X, N, inv);
-                X = X >= N - C? X - N + C: X + C;
-            }
+            for (int i = 1; i < L; i++) f(X, C);
 
             int k = 0;
-            while (k < L && gcd_val == 1) {
+            while (k < L && g == 1) {
                 Xs = X;
-                for (size_t i = 0; i < m && i < L - k; i++) {
-                    X = montmul(X, X, N, inv);
-                    X = X >= N - C? X - N + C: X + C;
-                    q = montmul(q, Xt > X? Xt - X: X - Xt, N, inv);
+                for (int i = 0; i < m && i < L - k; i++) {
+                    f(X, C);
+                    q = mul128(q, Xt > X? Xt - X: X - Xt, N);
                 }
-                gcd_val = __gcd(q, N);
+                g = __gcd(q, N);
                 k += m;
             }
             L += L;
         }
-        if (gcd_val == N) {
+        if (g == N) {
             do {
-                Xs = montmul(Xs, Xs, N, inv);
-                Xs = Xs >= N - C? Xs - N + C: Xs + C;
-                gcd_val = __gcd(Xs > Xt? Xs - Xt: Xt - Xs, N);
-            } while (gcd_val == 1);
+                f(Xs, C);
+                g = __gcd(Xs > Xt ? Xs - Xt : Xt - Xs, N);
+            } while (g == 1);
         }
-        return gcd_val;
+        return g;
     }
 
-    u128 Mod_Bin_Exp(u128 N, u128 power, u128 mod) {
-        if (N % mod == 0)
-            return 0;
-        if (N == 1 || power == 0)
-            return 1;
-
-        if (N >= mod)
-            N -= mod;
-
-        u128 res{1};
-        while (power) {
-            if (power & 1)
-                res = mul128(res, N, mod);
-
-            N = mul128(N, N, mod);
-            power >>= 1;
+    static void factorRec(u128 n, vector<u128>& fac) {
+        if (n == 1) return;
+        if (millerRabin(n))
+            fac.push_back(n);
+        else {
+            u128 d = pollardBrent(n);
+            factorRec(d, fac);
+            factorRec(n / d, fac);
         }
-        return res;
     }
 
-    bool Check_Composite(u128 N, u128 a, u128 d, int s) {
-        u128 X = Mod_Bin_Exp(a, d, N);
-        if (X == 1 || X == N - 1)
-            return false;
-
-        for (int r = 1; r < s; r++) {
-            X = mul128(X, X, N);
-            if (X == 1 || X == N - 1)
-                return false;
-        }
-        return true;
-    }
-
-    bool Miller_Rabin(u128 N)
-    {
-        u128 d = N - 1;
-        int s{};
-        while (~s & 1)
-            d >>= 1, ++s;
-
-        for (int a : {11, 13, 17}) {
-            if (N == a)
-                return true;
-            if (Check_Composite(N, a, d, s))
-                return false;
-        }
-        return true;
-    }
-
-    template<typename T>
-    bool Is_Prime(T N) {
-        if(N < 2) return false;
-        if(N <= 3 || N == 5 || N == 7) return true;
-        if(N & 1 ^ 1 || N % 3 == 0 || N % 5 == 0 || N % 7 == 0)
-            return false;
-
-        return Miller_Rabin(N);
-    }
-
-    vector<pair<u128, int>> prime_factorize(u128 n) {
-        if(n == 1) return {};
-
-        vector<u128> all;
-        function<void(u128)> rec = [&all, &rec](u128 x) -> void {
-            if (x == 1) return;
-            if (!Is_Prime(x)) {
-                u128 y = Pollard_Brent(x);
-                rec(y);
-                rec(x / y);
-                return;
-            }
-            all.push_back(x);
-        };
-        rec(n);
-        sort(all.begin(), all.end());
-
-        vector<pair<u128, int>> res{{all[0], 1}};
-        for(int i = 1; i < all.size(); i++) {
-            if(all[i] == all[i - 1])
-                res.back().second++;
-            else
-                res.emplace_back(all[i], 1);
+    static inline vector<pair<u128,int>> primeFactor(u128 n) {
+        vector<u128> facs;
+        factorRec(n, facs);
+        sort(facs.begin(), facs.end());
+        vector<pair<u128,int>> res;
+        for (u128 p : facs) {
+            if (res.empty() || res.back().first != p)
+                res.emplace_back(p, 1);
+            else res.back().second++;
         }
         return res;
-    }
-
-    inline istream &operator>>(istream &is, u128 &x) {
-        string s;
-        is >> s;
-        x = 0;
-        bool negative = false;
-        int i = 0;
-        if (s[0] == '-')
-            negative = true, i++;
-        while(i < s.size())
-            x = x * 10 + (s[i++] - '0');
-        if(negative)
-            x = -x;
-        return is;
-    }
-
-    inline ostream &operator<<(ostream &os, u128 x) {
-        if (x == 0)
-            return os << '0';
-        if (x < 0)
-            os << '-', x = -x;
-        string s;
-        while (x > 0) {
-            s += char(x % 10 + '0');
-            x /= 10;
-        }
-        for(int i = int(s.size()) - 1; ~i; i--) {
-            os << s[i];
-        }
-        return os;
     }
 }
 //using namespace bigNumber;
@@ -2376,6 +2273,12 @@ int32_t main() {
  a and m not coprime
  g = gcd(a, m)
  (a^(x-1) * (a / g)) % (m / g) = b / g
+ ===================================================================================================
+ a^(power%phi(m)) % m;
+ ===================================================================================================
+ count balanced brackets
+ r=n/2
+ nCr(n, r) - nCr(n, r-1)
  ===================================================================================================
  biggest divisors
  735134400 1344 => 2^6 3^3 5^2 7 11 13 17
