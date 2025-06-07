@@ -1493,6 +1493,92 @@ string hashGraph(vector<vector<int>> &g) {
     return min(calc(h1), calc(h2));
 }
 
+class flattenGraph {
+public:
+    int n, Log{};
+    vector<int> g, lvl, cycleId, index;
+    // lvl[u] == 0? u in loop
+    // if u in cycle: cycles[cycleId[u]][index[u]] == u
+    // if u not in cycle: index[u] == give me first node in cycle
+    vector<vector<int>> up, cycles;
+
+    explicit flattenGraph(vector<int> const &a) : n(int(a.size())), g(a), lvl(n), cycleId(n, -1), index(n) {
+        iota(index.begin(), index.end(), 0);
+        vector<int> in(n);
+        for(int i = 0; i < n; i++) in[g[i]]++;
+
+        queue<int> q;
+        for(int i = 0; i < n; i++) {
+            if (!in[i]) q.push(i);
+        }
+
+        vector<int> v;
+        while(!q.empty()) {
+            int u = q.front(); q.pop();
+            v.push_back(u);
+            if(!--in[g[u]]) q.push(g[u]);
+        }
+
+        reverse(v.begin(), v.end());
+        for(int u : v) lvl[u] = lvl[g[u]] + 1, index[u] = index[g[u]];
+
+        for(int i = 0; i < n; i++) {
+            if(in[i]) {
+                int u = i;
+                vector<int> x;
+                do {
+                    index[u] = int(x.size());
+                    cycleId[u] = int(cycles.size());
+                    x.push_back(u);
+                    in[u] = 0;
+                    u = g[u];
+                } while(u != i);
+                cycles.emplace_back(std::move(x));
+            }
+        }
+    }
+
+    void build_up() {
+        Log = __lg(n) + 1;
+        up.resize(n, vector(Log, 0));
+        for(int u = 0; u < n; u++) up[u][0] = g[u];
+
+        for(int l = 1; l < Log; l++) {
+            for(int u = 0; u < n; u++) {
+                up[u][l] = up[up[u][l - 1]][l - 1];
+            }
+        }
+    }
+
+    int up_to_k(int u, int k) {
+        while(k) {
+            if(~cycleId[u]) {
+                int i = cycleId[u];
+                return cycles[i][(index[u] + k) % cycles[i].size()];
+            }
+            if(k <= lvl[u]) {
+                u = up[u][__builtin_ctz(k)];
+                k ^= k & -k;
+            }
+            else k -= lvl[u], u = index[u];
+        }
+        return u;
+    }
+
+    int go(int from, int to) { // minimum steps
+        if(lvl[from] < lvl[to]) return -1;
+        if(lvl[from] && !lvl[to]) {
+            if(cycleId[index[from]] != cycleId[to]) return -1;
+            return int(lvl[from] + (index[to] - index[index[from]] + cycles[cycleId[to]].size()) % cycles[cycleId[to]].size());
+        }
+        if(!lvl[from] && !lvl[to]) {
+            if(cycleId[from] != cycleId[to]) return -1;
+            return int((index[to] - index[from] + cycles[cycleId[to]].size()) % cycles[cycleId[to]].size());
+        }
+        return up_to_k(from, lvl[from] - lvl[to]) == to? lvl[from] - lvl[to]: -1;
+    }
+};
+
 int max_flow(vector<vector<int>> g, int start, int end) {
     if(start == end) return INT_MAX;
     int n = int(g.size());
