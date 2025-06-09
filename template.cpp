@@ -1852,61 +1852,53 @@ struct Centroid {
 };
 
 namespace matrices {
-    int mod = 1'000'000'007;
-    struct matrix : public vector<vector<int>> {
-        size_t n;
-        matrix(size_t n, bool d = false) : n(n), vector(n, vector<int>(n)) {
-            for(int i = 0; i < n; i++) {
-                for (int j = 0; j < n; j++) {
-                    (*this)[i][j] = i == j ? d : 0;
-                }
-            }
-        }
-        matrix operator*(const matrix &B) const {
-            matrix C(n);
-            for(int i = 0; i < n; i++) {
-                for (int j = 0; j < n; j++) {
-                    for (int k = 0; k < n; k++) {
-                        C[i][j] = (C[i][j] + (*this)[i][k] * B[k][j]) % mod;
-                    }
-                }
-            }
-            return C;
-        }
-        matrix& operator^=(int64_t p) {
-            matrix res(n, true);
-            while(p > 0) {
-                if(p & 1) res = res * *this;
-                *this = *this * *this;
-                p >>= 1;
-            }
-            return *this = res;
-        }
-    };
+    const int mod = 1'000'000'007, Z = 3;
+    using matrix = array<array<int, Z>, Z>;
+    using vec = array<int, Z>;
 
-/*
-    f(n) = a * f(n - 1) + b * f(n - 3) + c
-    T = {a, 0, b, 1},
-        {1, 0, 0, 0},
-        {0, 1, 0, 0},
-        {0, 0, 0, 1}
-    T ^= n - 3
-    res = T[0][0] * f(3) + T[0][1] * f(2) + T[0][2] * f(1) + T[0][3] * c
-*/
+    inline int add(int x, int y) {
+        return x + y >= mod? x + y - mod: x + y;
+    }
+    inline int mul(int x, int y) {
+        return int(x * 1LL * y % mod);
+    }
 
-    int f(int64_t n) { // f(n) = f(n - 1) + f(n - 2) + 1
-        if(n <= 1) return 1;
-        if(n == 2) return 3;
-        matrix t(3);
-        t[0] = {1, 1, 1};
-        t[1] = {1, 0, 0};
-        t[2] = {0, 0, 1};
-        t ^= n - 2;
-        // f(2), f(1), const
-        return (t[0][0] * 3 % mod + t[0][1] * 1 + t[0][2] * 1) % mod;
+    matrix mul(matrix const &a, matrix const &b) {
+        matrix c{};
+        for(int i = 0; i < Z; i++)
+            for(int j = 0; j < Z; j++)
+                for(int k = 0; k < Z; k++)
+                    c[i][j] = add(c[i][j], mul(a[i][k], b[k][j]));
+        return c;
+    }
+
+    vec mul(matrix const &a, vec const &v) {
+        vec res{};
+        for(int i = 0; i < Z; i++)
+            for(int j = 0; j < Z; j++)
+                res[i] = add(res[i], mul(v[j], a[i][j]));
+        return res;
+    }
+
+    matrix fp(matrix a, int64_t p) {
+        matrix res{};
+        for(int i = 0; i < Z; i++) res[i][i] = 1;
+        while(p) {
+            if(p & 1) res = mul(res, a);
+            a = mul(a, a);
+            p >>= 1;
+        }
+        return res;
+    }
+
+    matrix add(matrix const &a, matrix b) {
+        for(int i = 0; i < Z; i++)
+            for(int j = 0; j < Z; j++)
+                b[i][j] = add(b[i][j], a[i][j]);
+        return b;
     }
 }
-//using namespace matrices;
+using namespace matrices;
 
 void sos(vector<int> &dp, bool Do = true) {
     // do -> sum of subsets, !do -> undo pre operation
