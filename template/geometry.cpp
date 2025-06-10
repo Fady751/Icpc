@@ -1,33 +1,36 @@
 #include <bits/stdc++.h>
 using namespace std;
 
-using ld = long double;
+/*
+ conj(a) -> a.imag() *= -1
+ abs(point) distance between (0,0) to this point
+ hypot(x, y) -> sqrt(x * x + y * y)
+ arg(vector) angle between this vector and x-axis
+ clamp(a, l, r) == min(r, max(l, a))
+ polar(rho, theta) -> make vector with length rho and angle theta
+ */
 
-ld pi = acos(-1);
+using ld = double;
+using point = complex<ld>;
 
-struct point : public array<ld, 2> {
-    ld dis(point x) {
-        return sqrt((x[0] - (*this)[0]) * (x[0] - (*this)[0])
-                    + (x[1] - (*this)[1]) * (x[1] - (*this)[1]));
-    }
-    void move(ld x, point v) {
-        v[0] *= x;
-        v[0] += (*this)[0];
-        v[1] *= x;
-        v[1] += (*this)[1];
-        (*this) = v;
-    }
-    point V(point o) {
-        if(o == *this)
-            return point{0, 0};
-        ld ds = this->dis(o);
-        return {(o[0] - (*this)[0]) / ds, (o[1] - (*this)[1]) / ds};
-    }
-    friend istream &operator>>(istream &is, point &o) {
-        return is >> o[0] >> o[1];
-    }
-};
+const ld pi = acos(-1);
 
-ld triangleArea(ld x1, ld y1, ld x2, ld y2, ld x3, ld y3) {
-    return 0.5 * abs(x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2));
+#define dot(a, b) (conj(a) * (b)).real()
+
+#define cross(a, b) (conj(a) * (b)).imag()
+
+auto comp(point a, point b) { return pair{a.real(), a.imag()} < pair{b.real(), b.imag()}; }
+
+istream &operator>>(istream &is, point &p) {
+    ld x, y; is >> x >> y;
+    return p.real(x), p.imag(y), is;
+}
+
+point line_inter(point a, point b, point c, point d) { // a / sin(a) == b / sin(b) == c / sin(c)
+    point ab = b - a, cd = d - c, ac = c - a;
+    return a + ab * (cross(ac, cd) / cross(ab, cd));
+}
+
+ld triangleArea(point a, point b, point c) {
+    return 0.5 * abs(cross(b - a, c - a));
 }
