@@ -6,8 +6,8 @@ namespace RollingHash {
 
     vector<int> Pb1(N + 1), Pb2(N + 1);
     char init = []() {
-        Pb1[1] = b1, Pb2[1] = b2;
-        for (int i = 2; i <= N; i++) {
+        Pb1[0] = Pb2[0] = 1;
+        for (int i = 1; i <= N; i++) {
             Pb1[i] = int(1LL * Pb1[i - 1] * b1 % mod);
             Pb2[i] = int(1LL * Pb2[i - 1] * b2 % mod);
         }
