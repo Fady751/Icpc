@@ -449,7 +449,8 @@ namespace FFT {
         if(invert) for(cd & x : a) x /= n;
     }
     vector<int64_t> mul(vector<int> &a, vector<int> &b) {
-        int N = 1 << (__lg(a.size() + b.size()) + 1);
+        int N = 1;
+        while (N < a.size() + b.size() - 1) N <<= 1;
 
         vector<cd> ta(a.begin(), a.end()), tb(b.begin(), b.end());
         ta.resize(N);
@@ -471,6 +472,7 @@ namespace FFT {
     }
 
     vector<int> string_matching(string &s, string &t) {
+        if (t.size() > s.size()) return {};
         int n = s.size(), m = t.size();
         vector<int> s1(n), s2(n), s3(n);
         for(int i = 0; i < n; i++) {
@@ -522,7 +524,8 @@ namespace FFT {
         }
     }
     vector<int> mulMod(vector<int> a, vector<int> b) {
-        int N = 1 << (__lg(a.size() + b.size()) + 1);
+        int N = 1;
+        while (N < a.size() + b.size() - 1) N <<= 1;
         a.resize(N);
         b.resize(N);
 

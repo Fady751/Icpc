@@ -94,6 +94,11 @@ ld triangleArea(point a, point b, point c) {
     return 0.5 * fabs(cross(b - a, c - a));
 }
 
+// angle abc in radians
+ld angle_abc(point a, point b, point c) {
+    return acos(clamp<ld>(dot(a - b, c - b) / (abs(a - b) * abs(c - b)), -1, 1));
+}
+
 // ============================= Circles ================================
 
 pair<ld, point> findCircle(point a, point b, point c) {
@@ -174,7 +179,7 @@ ld polygonSign(vector<point>& p) {
     ld area = 0;
     int n = (int)p.size();
     p.push_back(p[0]);
-    for(int i = 0; i < n; ++i) area += cross(p[i], p[(i + 1) % n]);
+    for(int i = 0; i < n; ++i) area += cross(p[i], p[i + 1]);
     p.pop_back();
     return sign(0.5 * area);
 }
@@ -200,8 +205,8 @@ ll internalPointsCount(vector<point>& p) {
     p.push_back(p[0]);
     for (int i = 0; i < n; ++i) {
         point a = p[i], b = p[i + 1];
-        A2 += ll(a.real() * b.imag() - a.imag() * b.real());
-        B += gcd((ll)abs(b.real() - a.real()), (ll)abs(b.imag() - a.imag()));
+        A2 += ll(a.X * b.Y - a.Y * b.X);
+        B += __gcd((ll)abs(b.X - a.X), (ll)abs(b.Y - a.Y));
     }
     p.pop_back();
     return (abs(A2) - B + 2) / 2;
@@ -258,15 +263,15 @@ auto polygonCut(vector<point> &p, point a, point b) {
     point inter;
     int n = int(p.size());
     p.push_back(p[0]);
-
+    auto f = [](auto &x, auto p) {return (x.empty() || sign(abs(x.back() - p)));};
     for(int i = 0; i < n; i++) {
         point curr = p[i], nxt = p[i + 1];
-        if(ccw(a, b, curr) <= 0)
-            r.push_back(curr);
-        if(segmentsIntersect(a, b, curr, nxt, inter))
-            l.push_back(inter), r.push_back(inter);
-        if(ccw(a, b, curr) >= 0)
-            l.push_back(curr);
+        if(ccw(a, b, curr) <= 0 && f(r, curr)) r.push_back(curr);
+        if(ccw(a, b, curr) >= 0 && f(l, curr)) l.push_back(curr);
+        if(segmentsIntersect(a, b, curr, nxt, inter)) {
+            if(f(l, inter)) l.push_back(inter);
+            if(f(r, inter)) r.push_back(inter);
+        }
     }
 
     p.pop_back();
@@ -288,4 +293,5 @@ void convexHull(vector<point> &p) {
         hull[k++] = p[i];
     }
     hull.resize(k - 1), p = hull;
+    if(p.size() > 1 && sign(abs(p[p.size() - 1] - p[p.size() - 2])) == 0) p.pop_back();
 }
