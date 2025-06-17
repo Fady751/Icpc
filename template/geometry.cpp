@@ -30,7 +30,16 @@ const ld pi = acos(-1);
 #define dot(a, b) (conj(a) * (b)).X
 #define cross(a, b) (conj(a) * (b)).Y
 
-auto comp(point a, point b) { return pair{a.X, a.Y} < pair{b.X, b.Y}; }
+struct compX{
+    bool operator()(point a, point b) const {
+        return a.X != b.X ? a.X < b.X : a.Y < b.Y;
+    }
+};
+struct compY{
+    bool operator()(point a, point b) const {
+        return a.Y != b.Y ? a.Y < b.Y : a.X < b.X;
+    }
+};
 
 int sign(ld x) {
     return (x > EPS) - (x < -EPS);
@@ -282,7 +291,7 @@ auto polygonCut(vector<point> &p, point a, point b) {
 void convexHull(vector<point> &p) {
     int n = (int)p.size(), k = 0;
     if (n <= 1) return;
-    sort(p.begin(), p.end(), comp);
+    sort(p.begin(), p.end(), compX());
     vector<point> hull(2 * n);
     for (int i = 0; i < n; ++i) {
         while (k >= 2 && ccw(hull[k - 2], hull[k - 1], p[i]) <= 0) --k;
