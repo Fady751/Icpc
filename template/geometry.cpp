@@ -21,6 +21,7 @@ using ll = int64_t;
 using ld = double;
 using point = complex<ld>;
 
+const ll inf = 7e18;
 const ld EPS = 1e-9;
 const ld pi = acos(-1);
 
@@ -101,6 +102,14 @@ bool segmentsIntersect(point a, point b, point c, point d, point &inter) {
 // works for any triangle
 ld triangleArea(point a, point b, point c) {
     return 0.5 * fabs(cross(b - a, c - a));
+}
+
+bool pointInTriangle(point a, point b, point c, point p) {
+    ld s1 = cross(b - a, p - a);
+    ld s2 = cross(c - b, p - b);
+    ld s3 = cross(a - c, p - c);
+    return (sign(s1) >= 0 && sign(s2) >= 0 && sign(s3) >= 0) ||
+           (sign(s1) <= 0 && sign(s2) <= 0 && sign(s3) <= 0);
 }
 
 // angle abc in radians
@@ -248,6 +257,25 @@ bool pointInPolygon(vector<point> &p, point o) {
     return in;
 }
 
+// work for simple convex polygon
+bool pointInConvex(vector<point> &poly, point p) {
+    int n = int(poly.size());
+    if(n == 1) return sign(abs(poly[0] - p)) == 0;
+    if(n == 2) return onSegment(poly[0], poly[1], p);
+
+    point f = poly[0];
+
+    if(sign(cross(poly[1] - f, p - f)) < 0 || sign(cross(poly[n - 1] - f, p - f)) > 0) return false;
+
+    int l = 1, r = n - 1;
+    while(r > l + 1) {
+        int mid = (l + r) >> 1;
+        if(sign(cross(poly[mid] - f, p - f)) > 0) l = mid;
+        else r = mid;
+    }
+    return pointInTriangle(f, poly[l], poly[r], p);
+}
+
 // works for any simple polygon (cw or ccw)
 point polygonCentroid(vector<point>& p) {
     ld A = 0, c;
@@ -304,3 +332,50 @@ void convexHull(vector<point> &p) {
     hull.resize(k - 1), p = hull;
     if(p.size() > 1 && sign(abs(p[p.size() - 1] - p[p.size() - 2])) == 0) p.pop_back();
 }
+
+struct Line {
+    ll a = 0, b = -inf;
+    inline ll eval(ll x) { return a * x + b; }
+};
+// Li Chao Tree
+struct LiChao {
+    int n;
+    vector<Line> tr;
+
+    LiChao(int size) : n(size), tr(n << 2) { }
+
+    void update(int x, int lx, int rx, int l, int r, Line v) {
+        if (l > rx || lx > r) return;
+        if (lx == rx) {
+            if (tr[x].eval(lx) < v.eval(lx)) swap(tr[x], v);
+            return;
+        }
+        int mdx = (lx + rx) >> 1;
+        if (lx >= l && rx <= r) {
+            bool good_L = v.eval(lx) > tr[x].eval(lx);
+            bool good_M = v.eval(mdx) > tr[x].eval(mdx);
+            if (good_M) swap(tr[x], v);
+            good_L != good_M? update(x << 1, lx, mdx, l, r, v):
+            update(x << 1 | 1, mdx + 1, rx, l, r, v);
+            return;
+        }
+        update(x << 1, lx, mdx, l, r, v);
+        update(x << 1 | 1, mdx + 1, rx, l, r, v);
+    }
+
+    ll query(int x, int lx, int rx, int i) {
+        if (lx == rx) return tr[x].eval(i);
+        int mdx = (lx + rx) >> 1;
+        return max(tr[x].eval(i),
+                   i <= mdx? query(x << 1, lx, mdx, i):
+                   query(x << 1 | 1, mdx + 1, rx, i));
+    }
+
+    void add_line(int l, int r, Line v) {
+        update(1, 0, n, l, r, v);
+    }
+
+    ll get_max(int i) {
+        return query(1, 0, n, i);
+    }
+};
