@@ -29,10 +29,13 @@ using namespace std;
  ===================================================================================================
  for (int x = mask; x > 0; x = (x - 1) & mask)
  get all x such that mask = mask | x
+ ===================================================================================================
+ sum from 1 to n: i * nCr(n, i) = n * (1LL << (n - 1))
  ==================================================================================================
   g++ main.cpp -o main "-Wl,--stack,16777216"
  */
 
+using ll = int64_t;
 const int mod = 1'000'000'007, N = 200'000;
 
 auto sieve = [](int n){
@@ -300,38 +303,45 @@ public:
 const int bits = __lg(100000) + 1;
 struct basis {
     int sz = 0;
-    array<int, bits> arr{};
+    array<int, bits> a{};
     void add(int x) {
         if(sz == bits) return;
-        for(int i = __lg(x); x; i = __lg(x)) {
-            if(!arr[i])
-                return sz++, void(arr[i] = x);
-            x ^= arr[i];
+        for(int i = __lg(x); x; x ^= a[i], i = __lg(x)) {
+            if(!a[i]) return sz++, void(a[i] = x);
         }
     }
     bool find(int x) {
         if(sz == bits) return true;
         for(int i = __lg(x); x; i = __lg(x)) {
-            if(arr[i]) x ^= arr[i];
+            if(a[i]) x ^= a[i];
             else return false;
         }
         return true;
     }
     void clear() {
-        if(!sz) return;
-        arr.fill(0);
-        sz = 0;
+        if(sz) a.fill(0), sz = 0;
     }
     int getMax() {
-        int maxXor = 0;
-        for(int i = bits - 1; i >= 0; i--) maxXor = max(maxXor ^ arr[i], maxXor);
-        return maxXor;
+        int r = 0;
+        for(int i = bits - 1; i >= 0; i--) r = max(r ^ a[i], r);
+        return r;
+    }
+    int find_k(int k) { // index-0
+        assert(k >= 0 && k < 1 << sz);
+        int curr = 0;
+        for(int i = bits - 1, b = sz - 1; i >= 0; i--) {
+            if(a[i]) {
+                if((k >> b & 1) ^ (curr >> i & 1)) curr ^= a[i];
+                b--;
+            }
+        }
+        return curr;
     }
     basis& operator+=(const basis &o) {
         if(sz == bits) return *this;
         if(o.sz == bits) return *this = o;
-        for(int i = 0; i < bits; i++) if(o.arr[i])
-            add(o.arr[i]);
+        for(int i = 0; i < bits; i++) if(o.a[i])
+                add(o.a[i]);
         return *this;
     }
 };
@@ -536,6 +546,57 @@ namespace FFT {
 
         ntt(a, true);
 
+        return a;
+    }
+
+    void fwht_and(vector<ll>& a, bool invert) {
+        int n = a.size();
+        for (int len = 1; 2 * len <= n; len <<= 1) {
+            for (int i = 0; i < n; i += 2 * len) {
+                for (int j = 0; j < len; ++j) {
+                    a[i + j] = (a[i + j] + (invert? -1: 1) * a[i + j + len] + mod) % mod;
+                }
+            }
+        }
+    }
+    void fwht_or(vector<ll>& a, bool invert) {
+        int n = a.size();
+        for (int len = 1; 2 * len <= n; len <<= 1) {
+            for (int i = 0; i < n; i += 2 * len) {
+                for (int j = 0; j < len; ++j) {
+                    a[i + j + len] = (a[i + j + len] + (invert? -1: 1) * a[i + j] + mod) % mod;
+                }
+            }
+        }
+    }
+    void fwht_xor(vector<ll>& a, bool invert) {
+        int n = a.size();
+        for (int len = 1; 2 * len <= n; len <<= 1) {
+            for (int i = 0; i < n; i += 2 * len) {
+                for (int j = 0; j < len; ++j) {
+                    ll u = a[i + j], v = a[i + j + len];
+                    a[i + j] = (u + v) % mod;
+                    a[i + j + len] = (u - v + mod) % mod;
+                }
+            }
+        }
+        if (invert) {
+            ll inv2 = (mod + 1) / 2;
+            ll inv_n = 1;
+            for(int i = 1; i < n; i <<= 1)
+                inv_n = inv_n * inv2 % mod;
+            for (ll &x : a) x = x * inv_n % mod;
+        }
+    }
+    template<typename F>
+    vector<ll> convolution(vector<ll> a, vector<ll> b, F const &fun) {
+        int n = 1;
+        while (n < max(a.size(), b.size())) n <<= 1;
+        a.resize(n), b.resize(n);
+        fun(a, false);
+        fun(b, false);
+        for (int i = 0; i < n; ++i) a[i] = a[i] * b[i] % mod;
+        fun(a, true);
         return a;
     }
 }

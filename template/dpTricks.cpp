@@ -19,16 +19,24 @@ U& operator >> (U &input, vector<T> &x){
 }
 
 // dp tricks
-void sos(vector<int> &dp, bool Do = true) {
-    // do -> sum of subsets, !do -> undo pre operation
+void sos(vector<int> &dp, bool invert = false) {
+    // !invert -> sum of subsets, invert -> undo pre operation
     for (int i = 0; 1 << i < dp.size(); i++) {
         for (int mask = 0; mask < dp.size(); mask++) {
             if (mask & (1 << i)) {
-                dp[mask] += Do ? dp[mask ^ (1 << i)] : -dp[mask ^ (1 << i)];
+                dp[mask] += invert? -dp[mask ^ (1 << i)] : dp[mask ^ (1 << i)];
 //                dp[mask] >= mod? dp[mask] -= mod: dp[mask] < 0? dp[mask] += mod: 0;
             }
         }
     }
+/*
+ f[x]++;
+ f1[(N - 1) & ~x]++;
+ ================== number of y such that
+ x | y = x   => f[x]
+ x & y = x   => f1[(N - 1) & ~x]
+ x & y = 0   => f[(N - 1) & ~x]
+*/
 }
 
 struct Line {
