@@ -5,6 +5,12 @@ int dx[] = {-1, 0, 0, 1, 1, -1, 1, -1};
 int dy[] = {0, -1, 1, 0, 1, -1, -1, 1};
 string dc = "ULRD"s;
 
+/*
+ subGraph that have all nodes of the original graph and some of its edges.
+ A subgraph is called Eulerian if each node has even degree.
+ Eulerian of n nodes and m edges = power(2, m - n - numberOfConnectedGraph)
+ */
+
 class DSU {
     vector<int> p;
 public: //0-based
@@ -116,6 +122,7 @@ public:
 };
 
 struct TarjanSCC {
+    bool directed;
     int n, timer, sccCount;
     vector<int> in, low, sccId;
     vector<bool> inStack, isArticulation;
@@ -123,13 +130,13 @@ struct TarjanSCC {
     vector<pair<int, int>> bridges;
     vector<vector<int>> graph, sccs, dag;
 
-    explicit TarjanSCC(int n) : n(n), timer(0), sccCount(0) {
+    explicit TarjanSCC(int n, bool directed = false) : directed(directed), n(n), timer(0), sccCount(0) {
         graph.resize(n);
         in = low = sccId = vector(n, -1);
         inStack = isArticulation = vector(n, false);
     }
 
-    void addEdge(int u, int v, bool directed = false) {
+    void addEdge(int u, int v) {
         graph[u].push_back(v);
         if(!directed) graph[v].push_back(u);
     }
@@ -139,16 +146,18 @@ struct TarjanSCC {
         st.push(u), inStack[u] = true;
 
         int children = 0;
-        for (int v : graph[u]) if(v != parent) {
-                if (in[v] == -1) {
-                    children++;
-                    dfs(v, u);
+        for (int v : graph[u]) if(directed || v != parent) {
+            if (in[v] == -1) {
+                children++;
+                dfs(v, u);
 
-                    if(low[v] > in[u]) bridges.emplace_back(u, v);
-                    if(parent != -1 && low[v] >= in[u]) isArticulation[u] = true;
-                }
+                if(low[v] > in[u]) bridges.emplace_back(u, v);
+                if(parent != -1 && low[v] >= in[u]) isArticulation[u] = true;
                 low[u] = min(low[u], low[v]);
             }
+            else if(inStack[v])
+                low[u] = min(low[u], in[v]);
+        }
         if(parent == -1 && children > 1) isArticulation[u] = true;
 
         if (low[u] == in[u]) {
@@ -219,69 +228,57 @@ int max_flow(vector<vector<int>> g, int start, int end) {
     return mxFlow;
 }
 
-struct edge {
-    int from, to;
-    int cap;
-    int64_t cost;
-    explicit edge(int u, int v, int cap, int64_t cost) : from(u), to(v), cap(cap), cost(cost) { }
-};
+const int inf = 1e9;
+class MinCostMaxFlow {
+    struct Edge { int to, rev, cap, cost; };
+    int n;
+    vector<vector<Edge>> g;
+    vector<int> dis, pru, pri, h;
 
-pair<int, int64_t> min_cost_max_flow(const vector<edge> &edges, int start, int end, int n) { // {max flow, min cost}
-    if(start == end) return {INT_MAX, 0};
-    vector<int> par(n);
-    int mxFlow = 0;
-    int64_t mnCost = 0, inf = 1e17;
-    vector<vector<int>> g(n, vector<int>(n)); // cap
-    vector<vector<int64_t>> c(n, vector<int64_t>(n)); // cost
-    vector<vector<int>> adj(n);
+public:
+    MinCostMaxFlow(int n) : n(n), g(n), dis(n), pru(n), pri(n), h(n) {}
 
-    for(auto [u, v, cap, cost] : edges) {
-        adj[u].push_back(v);
-        adj[v].push_back(u);
-        g[u][v] = cap;
-        c[u][v] = cost;
-        c[v][u] = -cost;
+    void addEdge(int u, int v, int cap, int cost) {
+        g[u].push_back({v, (int)g[v].size(), cap, cost});
+        g[v].push_back({u, (int)g[u].size() - 1, 0, -cost});
     }
 
-    auto bfs = [&]() -> bool {
-        fill(par.begin(), par.end(), -1);
-        vector<int64_t> d(n, inf);
-        d[start] = 0;
-        vector<bool> inq(n, false);
-        queue<int> q;
-        q.push(start);
+    pair<int, int> flow(int s, int t, int maxF = inf) {
+        int res = 0, flow = 0;
+        fill(h.begin(), h.end(), 0);
 
-        while (!q.empty()) {
-            int u = q.front(); q.pop();
-            inq[u] = false;
-            for (int v : adj[u]) {
-                if (g[u][v] > 0 && d[v] > d[u] + c[u][v]) {
-                    d[v] = d[u] + c[u][v];
-                    par[v] = u;
-                    if(!inq[v]) inq[v] = true, q.push(v);
+        while (maxF > 0) {
+            priority_queue<pair<int, int>, vector<pair<int, int>>, greater<>> q;
+            fill(dis.begin(), dis.end(), inf);
+            dis[s] = 0, q.emplace(0, s);
+
+            while (!q.empty()) {
+                auto [d, v] = q.top(); q.pop();
+                if (dis[v] < d) continue;
+                for (int i = 0; i < g[v].size(); i++) {
+                    auto& e = g[v][i];
+                    if (e.cap > 0 && dis[e.to] > dis[v] + e.cost + h[v] - h[e.to]) {
+                        dis[e.to] = dis[v] + e.cost + h[v] - h[e.to];
+                        pru[e.to] = v, pri[e.to] = i;
+                        q.emplace(dis[e.to], e.to);
+                    }
                 }
             }
+            if(dis[t] == inf) break;
+
+            for(int v = 0; v < n; ++v) h[v] += dis[v];
+            int d = maxF;
+            for(int v = t; v != s; v = pru[v]) d = min(d, g[pru[v]][pri[v]].cap);
+
+            maxF -= d, flow += d, res += d * h[t];
+            for (int v = t; v != s; v = pru[v]) {
+                auto& e = g[pru[v]][pri[v]];
+                e.cap -= d, g[v][e.rev].cap += d;
+            }
         }
-        return ~par[end];
-    };
-    while(bfs()) {
-        int res = INT_MAX, v = end;
-        while(v != start) {
-            int u = par[v];
-            res = min(res, g[u][v]);
-            v = u;
-        }
-        v = end, mxFlow += res;
-        while(v != start) {
-            int u = par[v];
-            g[u][v] -= res;
-            mnCost += res * c[u][v];
-            g[v][u] += res;
-            v = u;
-        }
+        return {flow, res};
     }
-    return {mxFlow, mnCost};
-}
+};
 
 struct matching {
     int nl, nr;

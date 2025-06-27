@@ -20,8 +20,16 @@ using namespace std;
  a^(power%phi(m)) % m;
  ===================================================================================================
  count balanced brackets
- r=n/2
+ r=n/2  ||  or r = number of opened brackets
  nCr(n, r) - nCr(n, r-1)
+ ===================================================================================================
+ // different n*n grids whose each square have m colors
+ // if possible to rotate one of them so that they look the same then they same
+ t = n * n;
+ total = (fp(m, t)
+     + fp(m, (t + 1) / 2)
+     + 2 * fp(m, (t / 4) + (n % 2))) % mod;
+ total = mul(total, fp(4, mod - 2));
  ===================================================================================================
  biggest divisors
  735134400 1344 => 2^6 3^3 5^2 7 11 13 17
@@ -113,6 +121,39 @@ int modularInverse(int num, int m = mod) {
     }
     assert(num == 1);
     return (x0 + mod) % mod;
+}
+
+ll fac[21];
+void preFac() {
+    fac[0] = 1;
+    for(int i = 1; i <= 20; ++i)
+        fac[i] = fac[i - 1] * i;
+}
+
+vector<int> kth_permutation(int n, ll k) {
+    vector<int> a(n), ans;
+    iota(a.begin(), a.end(), 1);
+    for (int i = n; i >= 1; i--) {
+        ll f = fac[i - 1];
+        ans.push_back(a[k / f]);
+        a.erase(a.begin() + k / f);
+        k %= f;
+    }
+    return ans;
+}
+
+ll permutation_index(vector<int>& p) {
+    int n = int(p.size());
+    vector<int> a(n);
+    iota(a.begin(), a.end(), 1);
+
+    ll k = 0;
+    for (int i = 0; i < n; ++i) {
+        int j = int(find(a.begin(), a.end(), p[i]) - a.begin());
+        k += j * fac[n - 1 - i];
+        a.erase(a.begin() + j);
+    }
+    return k;
 }
 
 namespace combinatorics {
