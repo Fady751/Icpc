@@ -44,30 +44,30 @@ using namespace std;
  */
 
 using ll = int64_t;
-const int mod = 1'000'000'007, N = 200'000;
+const int mod = 1'000'000'007, N = 1e5 + 1;
+int prSz;
+int spf[N], prm[N];
 
-auto sieve = [](int n){
-    vector sieve(n + 1, 0);
-    for (int i = 2; i <= n; i++){
-        if(!sieve[i]) {
-            sieve[i] = i;
-            if(i * 1LL * i > n) continue;
-            for(int j = i * i; j <= n; j += i) if(!sieve[j])
-                sieve[j] = i;
+auto pre_Sieve = []() {
+    for (int i = 2; i < N; i++){
+        if(!spf[i]) spf[i] = prm[prSz++] = i;
+        for(int j = 0; i * prm[j] < N; j++) {
+            spf[i * prm[j]] = prm[j];
+            if(spf[i] == prm[j]) break;
         }
     }
-    return sieve;
-}(N);
+    return 0;
+}();
 
 vector<array<int, 2>> getFac(int n) {
     if(n < 2) return {};
     vector<array<int, 2>> res;
-    int p = sieve[n];
+    int p = spf[n];
     while(p > 1) {
         int c = 0;
         while(n % p == 0) n /= p, c++;
         res.push_back({p, c});
-        p = sieve[n];
+        p = spf[n];
     }
     return res;
 }
@@ -86,14 +86,26 @@ vector<int> getDivisors(int _n) {
     return res;
 }
 
-bool isPrime(int64_t num) {
+bool isPrime(ll num) {
     if(num < 2) return false;
     if(num < 4) return true;
     if(num % 2 == 0 || num % 3 == 0) return false;
-    for (int64_t i = 5; i * i <= num; i += 6)
+    for (ll i = 5; i * i <= num; i += 6)
         if (num % i == 0 || num % (i + 2) == 0)
             return false;
     return true;
+}
+
+ll phi(ll x) {
+    ll ans = x;
+    for(ll i = 2; i * i <= x; i++) {
+        if(x % i == 0) {
+            while(x % i == 0) x /= i;
+            ans -= ans / i;
+        }
+    }
+    if(x > 1) ans -= ans / x;
+    return ans;
 }
 
 int eGcd(int r0, int r1, int &x0, int &y0) {
