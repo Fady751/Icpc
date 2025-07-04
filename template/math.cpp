@@ -157,7 +157,8 @@ ll permutation_index(vector<int>& p) {
 }
 
 namespace combinatorics {
-    int mod = 1e9 + 7, MXS_ = 1;
+    const int mod = 1e9 + 7;
+    int MXS_ = 1;
     vector<int> fac_(1, 1), inv_(1, 1);
 
     int fp(int b, int p = mod - 2) {
@@ -180,6 +181,17 @@ namespace combinatorics {
         for(int i = int(inv_.size()) - 2; i >= MXS_; i--)
             inv_[i] = int(inv_[i + 1] * 1LL * (i + 1) % mod);
         MXS_ = nw;
+    }
+
+    inline int fac(int n) {
+        if(n < 0) return 0;
+        if(n >= MXS_) up_(n);
+        return fac_[n];
+    }
+    inline int inv(int n) {
+        if(n < 0) return 0;
+        if(n >= MXS_) up_(n);
+        return inv_[n];
     }
 
     inline int nCr(int n, int r) {

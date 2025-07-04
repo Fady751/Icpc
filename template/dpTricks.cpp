@@ -18,6 +18,28 @@ U& operator >> (U &input, vector<T> &x){
     return input;
 }
 
+// monotonic stack
+template<typename T, typename F>
+auto monP(const vector<T> &a, const F &fun) {
+    int n = int(a.size());
+    stack<int> st;
+    vector<int> res(n);
+    for(int i = 0; i < n; i++) {
+        while(!st.empty() && !fun(a[st.top()], a[i])) st.pop();
+        res[i] = st.empty()? -1: st.top();
+        st.push(i);
+    }
+    return res;
+}
+
+template<typename T, typename F>
+auto monS(const vector<T> &a, const F &fun) {
+    auto res = monP(vector(a.rbegin(), a.rend()), fun);
+    reverse(res.begin(), res.end());
+    for(auto &i : res) i = int(a.size()) - i - 1;
+    return res;
+}
+
 // dp tricks
 void sos(vector<int> &dp, bool invert = false) {
     // !invert -> sum of subsets, invert -> undo pre operation
