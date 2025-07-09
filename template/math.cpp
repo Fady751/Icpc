@@ -59,21 +59,20 @@ auto pre_Sieve = []() {
     return 0;
 }();
 
-vector<array<int, 2>> getFac(int n) {
-    if(n < 2) return {};
+auto factors(int n) {
     vector<array<int, 2>> res;
+    if(n < 2) return res;
     int p = spf[n];
     while(p > 1) {
-        int c = 0;
-        while(n % p == 0) n /= p, c++;
-        res.push_back({p, c});
+        res.push_back({p, 0});
+        while(n % p == 0) n /= p, res.back()[1]++;
         p = spf[n];
     }
     return res;
 }
 
-vector<int> getDivisors(int _n) {
-    auto _fac = getFac(_n);
+auto getDivisors(int _n) {
+    auto _fac = factors(_n);
     int cnt = 1;
     for(auto [pr, pw] : _fac) cnt *= pw + 1;
     vector<int> res(1, 1); res.reserve(cnt);
@@ -86,12 +85,11 @@ vector<int> getDivisors(int _n) {
     return res;
 }
 
-bool isPrime(ll num) {
-    if(num < 2) return false;
-    if(num < 4) return true;
-    if(num % 2 == 0 || num % 3 == 0) return false;
-    for (ll i = 5; i * i <= num; i += 6)
-        if (num % i == 0 || num % (i + 2) == 0)
+bool isPrime(ll n) {
+    if(n < 4) return n > 1;
+    if(n % 2 == 0 || n % 3 == 0) return false;
+    for (ll i = 5; i * i <= n; i += 6)
+        if (n % i == 0 || n % (i + 2) == 0)
             return false;
     return true;
 }
@@ -108,31 +106,60 @@ ll phi(ll x) {
     return ans;
 }
 
-int eGcd(int r0, int r1, int &x0, int &y0) {
-    auto go = [](int &a, int &b, int q) {
-        int next = a - b * q;
-        a = b;
-        b = next;
-    };
-    int x1 = y0 = 0, y1 = x0 = 1;
-    while (r1 > 0) {
-        int q = r0 / r1;
-        go(r0, r1, q);
-        go(x0, x1, q);
-        go(y0, y1, q);
-    }
-    return r0;
+array<ll, 3> eGcd(ll a, ll b) {
+    if (b == 0) return {a, 1, 0};
+    auto [g, x1, y1] = eGcd(b, a % b);
+    return {g, y1, x1 - (a / b) * y1};
 }
 
-int modularInverse(int num, int m = mod) {
-    int x0 = 1, x1 = 0, q, t;
-    while(m) {
-        q = num / m;
-        num -= q * m, t = num, num = m, m = t;
-        x0 -= q * x1, t = x0, x0 = x1, x1 = t;
+array<ll, 2> CRT(ll a1, ll m1, ll a2, ll m2) {
+    a1 %= m1, a2 %= m2;
+    auto [g, q1, q2] = eGcd(m1, -m2);
+    if ((a2 - a1) % g) return {-1, -1};
+    ll lcm = m1 / g * m2;
+    ll m = m2 / g;
+    q1 = (a2 - a1) / g % m * q1 % m;
+    ll res = (a1 + m1 * q1) % lcm;
+    if (res < 0) res += lcm;
+    return {res, lcm};
+}
+
+ll modInv(ll a, ll m) {
+    ll x = 1, x1 = 0, q, t, b = m;
+    while(b) {
+        q = a / b;
+        a -= q * b, t = a, a = b, b = t;
+        x -= q * x1, t = x, x = x1, x1 = t;
     }
-    assert(num == 1);
-    return (x0 + mod) % mod;
+    assert(a == 1);
+    return (x + m) % m;
+}
+
+ll BSGS(ll a, ll b, ll p) {
+    a %= p, b %= p;
+    if(b == 1) return 0;
+    if(a == 0) return b == 0? 1: -1;
+    int add = 0;
+    ll g, tmp = 1;
+    while ((g = gcd(a, p)) > 1) {
+        if(b % g) return -1;
+        p /= g, b /= g, tmp = tmp * (a / g) % p, ++add;
+        if(tmp == b) return add;
+    }
+    b = b * modInv(tmp, p) % p;
+    int n = (int)sqrtl(p) + 1;
+    unordered_map<ll, int> mp;
+    for (ll q = 0, cur = 1; q <= n; ++q)
+        mp.emplace(cur, q), cur = cur * a % p;
+    ll an = 1;
+    for (ll i = 0; i < n; ++i) an = an * a % p;
+    an = modInv(an, p);
+    for (ll i = 0, cur = b; i <= n; ++i) {
+        auto it = mp.find(cur);
+        if(it != mp.end()) return i * n + it->second + add;
+        cur = cur * an % p;
+    }
+    return -1;
 }
 
 ll fac[21];
@@ -167,75 +194,6 @@ ll permutation_index(vector<int>& p) {
     }
     return k;
 }
-
-namespace combinatorics {
-    const int mod = 1e9 + 7;
-    int MXS_ = 1;
-    vector<int> fac_(1, 1), inv_(1, 1);
-
-    int fp(int b, int p = mod - 2) {
-        int ans = 1;
-        while(p) {
-            if(p & 1) ans = int(ans * 1LL * b % mod);
-            b = int(b * 1LL * b % mod);
-            p >>= 1;
-        }
-        return ans;
-    }
-
-    void up_(int nw) {
-        nw = max(MXS_ << 1, 1 << (__lg(nw) + 1));
-        fac_.resize(nw), inv_.resize(nw);
-        for(int i = MXS_; i < fac_.size(); i++)
-            fac_[i] = int(fac_[i - 1] * 1LL * i % mod);
-
-        inv_.back() = fp(fac_.back(), mod - 2);
-        for(int i = int(inv_.size()) - 2; i >= MXS_; i--)
-            inv_[i] = int(inv_[i + 1] * 1LL * (i + 1) % mod);
-        MXS_ = nw;
-    }
-
-    inline int fac(int n) {
-        if(n < 0) return 0;
-        if(n >= MXS_) up_(n);
-        return fac_[n];
-    }
-    inline int inv(int n) {
-        if(n < 0) return 0;
-        if(n >= MXS_) up_(n);
-        return inv_[n];
-    }
-
-    inline int nCr(int n, int r) {
-        if(r < 0 || r > n) return 0;
-        if(n >= MXS_) up_(n);
-        return int(fac_[n] * 1LL * inv_[r] % mod * inv_[n - r] % mod);
-    }
-    inline int nCr1(int n, int r) {
-        if(r < 0 || r > n) return 0;
-        r = min(r, n - r);
-        if(r >= MXS_) up_(r);
-        int ans = inv_[r];
-        for(int i = n - r + 1; i <= n; i++) {
-            ans = int(ans * 1LL * i % mod);
-        }
-        return ans;
-    }
-    inline int nPr(int n, int r) {
-        if(r < 0 || r > n) return 0;
-        if(n >= MXS_) up_(n);
-        return int(fac_[n] * 1LL * inv_[n - r] % mod);
-    }
-
-    inline int add(int x, int y) {
-        x = y < 0? x + y + mod: x + y;
-        return x >= mod? x - mod: x;
-    }
-    inline int mul(int x, int y) {
-        return int(x * 1LL * y % mod);
-    }
-}
-//using namespace combinatorics;
 
 template<typename T = int>
 struct equation { // n0 * x + n1 * y == n
@@ -282,7 +240,6 @@ struct equation { // n0 * x + n1 * y == n
             assert(x <= new_x);
         }
     }
-
     void toY(int64_t new_y, bool f = true) {
         // f == 0? y <= new_y: y >= new_y
         if(stepY == 0) return;
@@ -458,7 +415,7 @@ namespace matrices {
         return b;
     }
 }
-using namespace matrices;
+//using namespace matrices;
 
 namespace FFT {
     const int mod = 998244353;
@@ -669,116 +626,75 @@ namespace FFT {
 namespace bigNumber {
     using u128 = __uint128_t;
 
-    static inline istream& operator>>(istream &is, u128 &x) {
-        string s; is >> s;
-        x = 0;
-        for (char c : s) if (isdigit(c)) x = x * 10 + (c - '0');
-        return is;
+    istream& operator>>(istream &is, u128 &x) {
+        string s; is >> s, x = 0;
+        for(char c:s) x = x * 10 + (c - '0');return is;
     }
-    static inline ostream& operator<<(ostream &os, u128 x) {
-        if (x == 0) return os << '0';
-        string s;
-        while (x > 0) s += char('0' + (x % 10)), x /= 10;
+    ostream& operator<<(ostream &os, u128 x) {
+        if (x == 0) return os << 0;
+        string s; while (x > 0)s+='0'+x%10,x/=10;
         reverse(s.begin(), s.end());
         return os << s;
     }
 
-    static inline u128 mul128(u128 a, u128 b, u128 mod) {
-        if(mod <= LLONG_MAX) return a % mod * b % mod;
-        u128 r = 0;
-        a %= mod, b %= mod;
-        if(a < b) swap(a, b);
-        while (b) {
-            if (b & 1) r = r + a >= mod? r + a - mod: r + a;
-            a = a + a >= mod? a + a - mod: a + a;
-            b >>= 1;
+    u128 mul(u128 a, u128 b, u128 m) {
+        if(m <= ULLONG_MAX) return a % m * b % m;
+        u128 r = 0;a %= m, b %= m;
+        if(a < b)swap(a, b);
+        while(b) {
+            if(b & 1) r = r + a >= m ? r + a - m : r + a;
+            a = a + a >= m ? a + a - m : a + a, b >>= 1;
         }
         return r;
     }
-
-    static inline u128 modexp(u128 base, u128 exp, u128 mod) {
-        u128 res = 1;
-        base %= mod;
-        while (exp) {
-            if (exp & 1) res = mul128(res, base, mod);
-            base = mul128(base, base, mod);
-            exp >>= 1;
+    u128 fp(u128 b, u128 p, u128 m) {
+        u128 res = 1;b %= m;
+        while (p) {
+            if (p & 1) res = mul(res, b, m);
+            b = mul(b, b, m), p >>= 1;
         }
         return res;
     }
 
-    static inline bool millerRabin(u128 n) {
-        if (n < 2) return false;
-        for (u128 p : {2, 3, 5, 7, 11, 13, 17, 19, 23})
-            if(n % p == 0) return n == p;
-        u128 d = n - 1, s = 0;
-        while ((d & 1) == 0) d >>= 1, s++;
-        auto check = [&](u128 a) {
-            u128 x = modexp(a, d, n);
-            if (x == 1 || x == n - 1) return true;
-            for (u128 r = 1; r < s; r++) {
-                x = mul128(x, x, n);
-                if (x == n - 1) return true;
-                if (x == 1) return false;
-            }
-            return false;
-        };
-        for (u128 a : {2, 325, 9375, 28178, 450775, 9780504, 1795265022}) {
-            if(a % n == 0) return true;
-            if(!check(a)) return false;
+    int ctz(u128 x) {
+        int a = __builtin_ctzll(x);
+        return a + (a == 64? __builtin_ctzll(x >> 64): 0);
+    }
+    bool isPrime(u128 n) { // millerRabin
+        if (n < 2 || n % 6 % 4 != 1) return (n | 1) == 3;
+        u128 s = ctz(n-1), d = n >> s;
+        for(u128 a : {2, 325, 9375, 28178, 450775, 9780504, 1795265022}) {
+            u128 p = fp(a%n, d, n), i = s;
+            while(p != 1 && p != n - 1 && a % n && i--) p = mul(p, p, n);
+            if (p != n-1 && i != s) return false;
         }
         return true;
     }
 
-    static u128 pollardBrent(u128 N) {
-        if(N & 1 ^ 1) return 2;
-        auto f = [&](u128 &x, u128 c) {
-            x = (mul128(x, x, N) + c) % N;
-        };
-
-        static u128 rng = 0xdeafbeefff;
-        uint64_t a = rng * 6364136223846793005ull + 1442695040888963407ull;
-        uint64_t b = a * 6364136223846793005ull + 1442695040888963407ull;
-        rng = (a + b) ^ (a * b);
-
-        u128 X0 = 1 + a % (N - 1), X = X0, C = 1 + b % (N - 1), g = 1, q = 1, Xs, Xt;
-        int m = 128, L = 1;
-        while(g == 1) {
-            Xt = X;
-            for (int i = 1; i < L; i++) f(X, C);
-            int k = 0;
-            while (k < L && g == 1) {
-                Xs = X;
-                for (int i = 0; i < m && i < L - k; i++)
-                    f(X, C), q = mul128(q, Xt > X? Xt - X: X - Xt, N);
-                g = __gcd(q, N), k += m;
-            }
-            L += L;
+    u128 pollardRho(u128 n) {
+        u128 x = 0, y = 0, t = 30, prd = 2, i = 1, q;
+        auto f = [&](u128 x) { return mul(x, x, n) + i; };
+        while (t++%40 || __gcd(prd, n)==1) {
+            if(x == y) x = ++i, y = f(x);
+            if((q = mul(prd, x>y?x-y:y-x, n))) prd = q;
+            x = f(x), y = f(f(y));
         }
-        if(g == N) {
-            do f(Xs, C), g = __gcd(Xs > Xt ? Xs - Xt : Xt - Xs, N);
-            while (g == 1);
-        }
-        return g;
+        return __gcd(prd, n);
     }
 
-    static void factorRec(u128 n, vector<u128>& fac) {
-        if (n == 1) return;
-        if(millerRabin(n)) fac.push_back(n);
-        else {
-            u128 d = pollardBrent(n);
-            factorRec(d, fac), factorRec(n / d, fac);
-        }
-    }
-
-    static inline vector<pair<u128,int>> primeFactor(u128 n) {
-        vector<u128> facs;
-        factorRec(n, facs);
-        sort(facs.begin(), facs.end());
+    auto primeFactor(u128 n) {
         vector<pair<u128,int>> res;
-        for (u128 p : facs) {
-            if (res.empty() || res.back().first != p)
-                res.emplace_back(p, 1);
+        if(n==1) return res;
+        vector<u128> f;
+        function<void(u128)> slv=[&](u128 x) {
+            if(isPrime(x)) return f.push_back(x);
+            u128 d = pollardRho(x);
+            slv(d), slv(x/d);
+        };
+        slv(n);
+        sort(f.begin(), f.end());
+        for (u128 p : f) {
+            if(res.empty() || res.back().first != p) res.emplace_back(p, 1);
             else res.back().second++;
         }
         return res;
