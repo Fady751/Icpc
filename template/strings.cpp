@@ -393,52 +393,41 @@ auto manacher(const string &t) {
     // get max even len = res[2 * i + 1]; abba -> i = first b
 }
 
-template<int numOfChar = 26, char firstChar = 'a'>
 struct suffix_automaton {
-    struct state {
-        array<int, numOfChar> nxt{};
-        int link = -1, len{}, cnt = 1;
-        bool isSuffix = false;
-        state() { nxt.fill(-1); }
+    struct state : map<int, int> {
+        int fail = -1, len{}, cnt = 1;
+        bool ed = false;
     };
-    int lst;
+    int lst, n{};
     vector<state> tr;
-    explicit suffix_automaton(const string &s = "") : tr(1), lst(0) {
-        tr.reserve(s.size() * 2 + 1);
-        for(char i : s) add(i - firstChar);
-        if(!s.empty()) buildCnt();
-        for(int p = lst; p != -1; tr[p].isSuffix = true, p = tr[p].link);
+    explicit suffix_automaton(const string& s = ""s) : tr(1), lst(0) {
+        tr.reserve(s.size() * 2);
+        for(auto i : s) add(i);
     }
-
-    void add(char c) {
-        int curr = int(tr.size());
-        tr.emplace_back();
-        tr[curr].len = tr[lst].len + 1;
-        int p = lst;
-        while(~p && !~tr[p].nxt[c]) tr[p].nxt[c] = curr, p = tr[p].link;
-        if(p == -1) tr[curr].link = 0;
+    void add(int c) {
+        int x = int(tr.size());
+        tr.emplace_back(), n++;
+        tr[x].len = tr[lst].len + 1;
+        int p = lst, q;
+        while(~p && (q = tr[p].emplace(c, x).first->second) == x) p = tr[p].fail;
+        if(p == -1) tr[x].fail = 0;
         else {
-            int q = tr[p].nxt[c];
-            if(tr[p].len + 1 == tr[q].len) tr[curr].link = q;
+            if(tr[p].len + 1 == tr[q].len) tr[x].fail = q;
             else {
-                int clone = int(tr.size());
-                tr.emplace_back(tr[q]);
-                tr[clone].cnt = 0;
-                tr[clone].len = tr[p].len + 1;
-                while(~p && tr[p].nxt[c] == q) tr[p].nxt[c] = clone, p = tr[p].link;
-                tr[curr].link = tr[q].link = clone;
+                int y = int(tr.size()); tr.emplace_back(tr[q]);
+                tr[y].cnt = 0, tr[y].len = tr[p].len + 1;
+                while(~p && tr[p][c] == q) tr[p][c] = y, p = tr[p].fail;
+                tr[x].fail = tr[q].fail = y;
             }
         }
-        lst = curr;
+        lst = x;
     }
-
-    void buildCnt() {
-        vector<int> srt(tr.size());
-        iota(srt.begin(), srt.end(), 0);
-        sort(srt.begin(), srt.end(), [&](int i, int j) -> bool {
-            return tr[i].len > tr[j].len;
-        });
-        for(int i : srt) if(~tr[i].link)
-            tr[tr[i].link].cnt += tr[i].cnt;
+    void init() { // to build cnt, end
+        for(int p = lst; ~p; tr[p].ed = true, p = tr[p].fail);
+        vector b(n + 1, vector(0, 0));
+        for(int i = 0; i < tr.size(); ++i) b[tr[i].len].push_back(i);
+        for(int l = n; l >= 1; --l)
+            for(int u : b[l])
+                tr[tr[u].fail].cnt += tr[u].cnt;
     }
 };
