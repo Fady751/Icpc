@@ -418,15 +418,18 @@ namespace matrices {
 //using namespace matrices;
 
 namespace FFT {
-    const int mod = 998244353;
-    const int root = 3;
-    const int invRoot = 332748118;
+    const int mod = 998244353; // 998244353 754974721 167772161
+    const int root = 3; // 3 11 3
+    const int invRoot = 332748118; // 332748118 617706590 55924054
 
+    inline int mul(int x, int y) { return int(x * 1LL * y % mod); }
+    inline int add(int x, int y) { return x + y < mod? x + y: x + y - mod; }
+    inline int sub(int x, int y) { return x - y < 0? x - y + mod: x - y; }
     int fp(int b, int e) {
         int res = 1;
         while(e) {
-            if (e & 1) res = int(b * 1LL * res % mod);
-            b = int(b * 1LL * b % mod), e >>= 1;
+            if(e & 1) res = mul(res, b);
+            b = mul(b, b), e >>= 1;
         }
         return res;
     }
@@ -457,49 +460,34 @@ namespace FFT {
 
     void fft(vector<cd> &a, bool invert) {
         int n = (int)a.size();
-
         for (int i = 1, j = 0; i < n; i++) {
-            int bit = n >> 1;
-            for(; j & bit; bit >>= 1) j ^= bit;
-            j ^= bit;
-            if(i < j) swap(a[i], a[j]);
+            j ^= ((1 << __lg(n - 1 ^ j)) - 1) ^ (n - 1);
+            if(i < j)swap(a[i], a[j]);
         }
-
-        for (int len = 2; len <= n; len <<= 1) {
-            double ang = 2 * pi / len * (invert ? -1 : 1);
+        double ang = pi * (invert ? -1 : 1);
+        for (int len = 1; len < n; len <<= 1, ang /= 2) {
             cd w1(cos(ang), sin(ang));
-            for (int i = 0; i < n; i += len) {
-                cd w(1);
-                for(int j = 0; j * 2 < len; j++) {
-                    cd u = a[i + j], v = a[i + j + len / 2] * w;
-                    a[i + j] = u + v;
-                    a[i + j + len / 2] = u - v;
-                    w *= w1;
+            for (int i = 0; i < n; i += len * 2) {
+                cd w(1), u, v;
+                for(int j = 0; j < len; j++) {
+                    u = a[i + j], v = a[i + j + len] * w, w *= w1;
+                    a[i + j] = u + v, a[i + j + len] = u - v;
                 }
             }
         }
-        if(invert) for(cd & x : a) x /= n;
+        if(invert) for(cd &x : a) x /= n;
     }
-    vector<int64_t> mul(vector<int> &a, vector<int> &b) {
+    vector<int64_t> mul(vector<int> const &a, vector<int> const &b) {
         int N = 1;
         while (N < a.size() + b.size() - 1) N <<= 1;
-
-        vector<cd> ta(a.begin(), a.end()), tb(b.begin(), b.end());
-        ta.resize(N);
-        tb.resize(N);
-
-        fft(ta, false), fft(tb, false);
-
-        for(int i = 0; i < N; i++)
-            ta[i] *= tb[i];
-
-        fft(ta, true);
-
+        vector<cd> t(N);
+        for(int i = 0; i < a.size(); i++) t[i].real(a[i]);
+        for(int i = 0; i < b.size(); i++) t[i].imag(b[i]);
+        fft(t, false);
+        for(auto &x : t) x *= x;
+        fft(t, true);
         vector<int64_t> ans(N);
-        for(int i = 0; i < N; i++) {
-            ans[i] = (int64_t)round(ta[i].real());
-        }
-
+        for(int i = 0; i < N; i++) ans[i] = (int64_t)round(t[i].imag() / 2.0);
         return ans;
     }
 
@@ -528,31 +516,23 @@ namespace FFT {
 
     void ntt(vector<int> &a, bool invert) {
         int n = (int)a.size();
-
         for (int i = 1, j = 0; i < n; i++) {
-            int bit = n >> 1;
-            for (; j & bit; bit >>= 1) j ^= bit;
-            j ^= bit;
-            if (i < j) swap(a[i], a[j]);
+            j ^= ((1 << __lg(n - 1 ^ j)) - 1) ^ (n - 1);
+            if(i < j)swap(a[i], a[j]);
         }
-
-        for (int len = 2; len <= n; len <<= 1) {
-            int w1 = fp(invert ? invRoot : root, (mod - 1) / len);
-
-            for (int i = 0; i < n; i += len) {
-                int w = 1;
-                for (int j = 0; j < len / 2; j++) {
-                    int u = a[i + j], v = int(a[i + j + len / 2] * 1LL * w % mod);
-                    a[i + j] = u + v < mod ? u + v : u + v - mod;
-                    a[i + j + len / 2] = u - v >= 0 ? u - v : u - v + mod;
-                    w = int(w * 1LL * w1 % mod);
+        for(int len = 2, l2 = 1, w1, w, u, v; len <= n; len <<= 1, l2 <<= 1) {
+            w1 = fp(invert? invRoot: root, (mod - 1) / len);
+            for(int i = 0; i < n; i += len) {
+                w = 1;
+                for(int j = 0; j < l2; j++) {
+                    u = a[i + j], v = mul(a[i + j + l2], w), w = mul(w, w1);
+                    a[i + j] = add(u, v), a[i + j + l2] = sub(u, v);
                 }
             }
         }
-
         if (invert) {
             int n_1 = fp(n, mod - 2);
-            for(int & x : a) x = int(x * 1LL * n_1 % mod);
+            for(int & x : a) x = mul(x, n_1);
         }
     }
     vector<int> mulMod(vector<int> a, vector<int> b) {
@@ -560,14 +540,10 @@ namespace FFT {
         while (N < a.size() + b.size() - 1) N <<= 1;
         a.resize(N);
         b.resize(N);
-
         ntt(a, false), ntt(b, false);
-
         for(int i = 0; i < N; i++)
             a[i] = int(a[i] * 1LL * b[i] % mod);
-
         ntt(a, true);
-
         return a;
     }
 
