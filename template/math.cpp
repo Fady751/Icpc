@@ -162,6 +162,48 @@ ll BSGS(ll a, ll b, ll p) {
     return -1;
 }
 
+int fp(int b, int p) {
+    int res = 1;
+    while(p) {
+        if(p & 1) res = int(res * 1LL * b % mod);
+        b = int(b * 1LL * b % mod), p >>= 1;
+    }
+    return res;
+}
+
+int sumNPowerM(int n, int m) { // 1^m + 2^m ... n^m
+    int k = m + 3;
+    vector<int> res(k);
+    for(int i = 1; i < k; i++) res[i] = (res[i - 1] + fp(i, m)) % mod;
+    if(n < k) return res[n];
+    int facK = k;
+    vector<int> p(k); p[0] = 1;
+    for(int i = 1; i < k; i++) {
+        p[i] = int(p[i - 1] * 1LL * (n - i) % mod);
+        facK = int(facK * 1LL * i % mod);
+    }
+    vector<int> inv(k + 1), s(k + 1);
+    inv[k] = fp(facK, mod - 2), s[k] = 1;
+    for(int i = k - 1; i >= 0; i--) {
+        s[i] = int(s[i + 1] * 1LL * (n - i) % mod);
+        inv[i] = int(inv[i + 1] * 1LL * (i + 1) % mod);
+    }
+    int ans = 0;
+    for(int i = 1; i < k; i++) {
+//        int cur = res[i];
+//        for(int j = 1; j < k; j++) {
+//            if(i == j) continue;
+//            cur = int(cur * 1LL * (n - j) % mod);
+//            cur = int(cur * 1LL * fp(abs(i - j), mod - 2) % mod);
+//        }
+//        if((k - i + 1) & 1) cur = (mod - cur) % mod;
+        int cur = int(res[i] * 1LL * p[i - 1] % mod * s[i + 1] % mod * inv[i - 1] % mod * inv[k - i - 1] % mod);
+        if((k - i + 1) & 1) cur = (mod - cur) % mod;
+        ans = (ans + cur) % mod;
+    }
+    return ans;
+}
+
 ll fac[21];
 void preFac() {
     fac[0] = 1;
