@@ -137,7 +137,7 @@ ll modInv(ll a, ll m) {
 
 ll BSGS(ll a, ll b, ll p) {
     a %= p, b %= p;
-    if(b == 1) return 0;
+    if(b == 1 || p == 1) return 0;
     if(a == 0) return b == 0? 1: -1;
     int add = 0;
     ll g, tmp = 1;
