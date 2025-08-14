@@ -328,46 +328,45 @@ string largestLexSubstring(const string &s) {
 
 struct corasick {
     struct node {
-        array<int, 26> nxt{}, go{};
-        vector<int> idx; // all string's indexes have any suffix
-        int p, link;
-        char ch;
-        explicit node(int p = -1, char ch = '?') : p(p), ch(ch), link(-1) {
-            nxt.fill(-1), go.fill(-1);
-        }
+        int fail = -1;
+        array<int, 26> nxt{};
+        vector<int> idx;
+        explicit node() { nxt.fill(-1); }
     };
     vector<node> tr;
-    explicit corasick(vector<string> &v) : tr(1) {
-        for(int i = 0; i < v.size(); i++) {
-            int x = 0;
-            for(char c : v[i]) {
-                if(tr[x].nxt[c - 'a'] == -1) {
-                    tr[x].nxt[c - 'a'] = int(tr.size());
-                    tr.emplace_back(x, c);
+    explicit corasick() : tr(1) { }
+    int add(const string &s, int id) {
+        int x = 0;
+        for (char ch: s) {
+            if(tr[x].nxt[ch - 'a'] == -1)
+                tr[x].nxt[ch - 'a'] = int(tr.size()), tr.emplace_back();
+            x = tr[x].nxt[ch - 'a'];
+        }
+        if(tr[x].idx.empty()) tr[x].idx.push_back(id);
+        return tr[x].idx.back();
+    }
+    void build() {
+        queue<int> q;
+        tr[0].fail = 0;
+        for (int c = 0; c < 26; c++) {
+            int u = tr[0].nxt[c];
+            if(u != -1) tr[u].fail = 0, q.push(u);
+            else tr[0].nxt[c] = 0;
+        }
+        while (!q.empty()) {
+            int v = q.front();
+            q.pop();
+            for (int c = 0; c < 26; c++) {
+                int u = tr[v].nxt[c];
+                if (u != -1) {
+                    tr[u].fail = tr[tr[v].fail].nxt[c];
+                    tr[u].idx.reserve(tr[u].idx.size() + tr[tr[u].fail].idx.size());
+                    for(int x : tr[tr[u].fail].idx) tr[u].idx.push_back(x);
+                    q.push(u);
                 }
-                x = tr[x].nxt[c - 'a'];
+                else tr[v].nxt[c] = tr[tr[v].fail].nxt[c];
             }
-            tr[x].idx.push_back(i);
         }
-        for(int i = 0; i < tr.size(); i++) mxSuffix(i);
-    }
-    int plus(int x, char c) {
-        if(tr[x].go[c - 'a'] == -1) {
-            if (tr[x].nxt[c - 'a'] != -1) tr[x].go[c - 'a'] = tr[x].nxt[c - 'a'];
-            else tr[x].go[c - 'a'] = x == 0 ? 0 : plus(mxSuffix(x), c);
-        }
-        return tr[x].go[c - 'a'];
-    }
-    int mxSuffix(int x) {
-        if(tr[x].link == -1) {
-            if(!x || !tr[x].p) tr[x].link = 0;
-            else tr[x].link = plus(mxSuffix(tr[x].p), tr[x].ch);
-
-            mxSuffix(tr[x].link);
-            tr[x].idx.reserve(tr[x].idx.size() + tr[tr[x].link].idx.size());
-            for(int y : tr[tr[x].link].idx) tr[x].idx.push_back(y);
-        }
-        return tr[x].link;
     }
 };
 
