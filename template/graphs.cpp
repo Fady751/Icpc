@@ -13,8 +13,8 @@ string dc = "ULRD"s;
 
 class DSU {
     vector<int> p;
-public: //0-based
-    explicit DSU(int _n) : p(_n + 1, -1) { }
+public: // 0-based
+    explicit DSU(int _n) : p(_n, -1) { }
     int find(int i) {
         return p[i] < 0? i: p[i] = find(p[i]);
     }

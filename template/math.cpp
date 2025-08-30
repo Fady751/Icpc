@@ -18,6 +18,16 @@ using namespace std;
  (a^(x-1) * (a / g)) % (m / g) = b / g
  ===================================================================================================
  a^(power%phi(m)) % m;
+ // be careful if a and m not co prime you should take mod like that
+ void MOD(int x, int mod) { return x < mod? x: x % mod + mod; } or
+ void MOD(int x, int mod) { return x < mod? x: (x - log2(mod) ) % mod + log2(mod); }
+ ===================================================================================================
+ for all  1 <= i <= n, sum[n] += gcd(i, n)
+ sum[a * b] = sum[a] * sum[b] if and only if a and b are coprime
+ ===================================================================================================
+ sum of numbers 1 <= i <= n | if(gcd(n, i) == d): sum += i, cnt++
+ sum = n * phi(n / d) / 2
+ cnt = phi(n / d)
  ===================================================================================================
  count balanced brackets
  r=n/2  ||  or r = number of opened brackets
@@ -44,13 +54,13 @@ using namespace std;
  */
 
 using ll = int64_t;
-const int mod = 1'000'000'007, N = 1e5 + 1;
-int prSz;
-int spf[N], prm[N];
+const int mod = 1'000'000'007;
+const int N = 1e5 + 1;
+int pc, spf[N], prm[N];
 
 auto pre_Sieve = []() {
     for (int i = 2; i < N; i++){
-        if(!spf[i]) spf[i] = prm[prSz++] = i;
+        if(!spf[i]) spf[i] = prm[pc++] = i;
         for(int j = 0; i * prm[j] < N; j++) {
             spf[i * prm[j]] = prm[j];
             if(spf[i] == prm[j]) break;
@@ -85,6 +95,88 @@ auto getDivisors(int _n) {
     return res;
 }
 
+vector<int> sieve(const int BN, const int Q = 17, const int L = 1 << 15) {
+    static const int rs[] = {1, 7, 11, 13, 17, 19, 23, 29};
+    struct P {
+        P(int p) : p(p) {}
+
+        int p;
+        int pos[8];
+    };
+    auto approx_prime_count = [](const int N) -> int {
+        return N > 60184 ? N / (log(N) - 1.1)
+                         : max(1., N / (log(N) - 1.11)) + 1;
+    };
+
+    const int v = sqrt(BN), vv = sqrt(v);
+    vector<bool> isp(v + 1, true);
+    for (int i = 2; i <= vv; ++i)
+        if (isp[i]) {
+            for (int j = i * i; j <= v; j += i) isp[j] = false;
+        }
+
+    const int rsize = approx_prime_count(BN + 30);
+    vector<int> primes = {2, 3, 5};
+    int psize = 3;
+    primes.resize(rsize);
+
+    vector<P> sprimes;
+    size_t pbeg = 0;
+    int prod = 1;
+    for (int p = 7; p <= v; ++p) {
+        if (!isp[p]) continue;
+        if (p <= Q) prod *= p, ++pbeg, primes[psize++] = p;
+        auto pp = P(p);
+        for (int t = 0; t < 8; ++t) {
+            int j = (p <= Q) ? p : p * p;
+            while (j % 30 != rs[t]) j += p << 1;
+            pp.pos[t] = j / 30;
+        }
+        sprimes.push_back(pp);
+    }
+
+    vector<unsigned char> pre(prod, 0xFF);
+    for (size_t pi = 0; pi < pbeg; ++pi) {
+        auto pp = sprimes[pi];
+        const int p = pp.p;
+        for (int t = 0; t < 8; ++t) {
+            const unsigned char m = ~(1 << t);
+            for (int i = pp.pos[t]; i < prod; i += p) pre[i] &= m;
+        }
+    }
+
+    const int block_size = (L + prod - 1) / prod * prod;
+    vector<unsigned char> block(block_size);
+    unsigned char *pblock = block.data();
+    const int M = (BN + 29) / 30;
+    for (int beg = 0; beg < M; beg += block_size, pblock -= block_size) {
+        int end = min(M, beg + block_size);
+        for (int i = beg; i < end; i += prod) {
+            copy(pre.begin(), pre.end(), pblock + i);
+        }
+        if (beg == 0) pblock[0] &= 0xFE;
+        for (size_t pi = pbeg; pi < sprimes.size(); ++pi) {
+            auto &pp = sprimes[pi];
+            const int p = pp.p;
+            for (int t = 0; t < 8; ++t) {
+                int i = pp.pos[t];
+                const unsigned char m = ~(1 << t);
+                for (; i < end; i += p) pblock[i] &= m;
+                pp.pos[t] = i;
+            }
+        }
+        for (int i = beg; i < end; ++i) {
+            for (int m = pblock[i]; m > 0; m &= m - 1) {
+                primes[psize++] = i * 30 + rs[__builtin_ctz(m)];
+            }
+        }
+    }
+    assert(psize <= rsize);
+    while (psize > 0 && primes[psize - 1] > BN) --psize;
+    primes.resize(psize);
+    return primes;
+}
+
 bool isPrime(ll n) {
     if(n < 4) return n > 1;
     if(n % 2 == 0 || n % 3 == 0) return false;
@@ -113,13 +205,14 @@ array<ll, 3> eGcd(ll a, ll b) {
 }
 
 array<ll, 2> CRT(ll a1, ll m1, ll a2, ll m2) {
-    a1 %= m1, a2 %= m2;
-    auto [g, q1, q2] = eGcd(m1, -m2);
+    a1 = (a1 % m1 + m1) % m1, a2 = (a2 % m2 + m2) % m2;
+    auto [g, x, y] = eGcd(m1, m2);
     if ((a2 - a1) % g) return {-1, -1};
     ll lcm = m1 / g * m2;
     ll m = m2 / g;
-    q1 = (a2 - a1) / g % m * q1 % m;
-    ll res = (a1 + m1 * q1) % lcm;
+    ll k = ((a2 - a1) / g % m + m) % m;
+    k = (k * (x % m + m) % m) % m;
+    ll res = (a1 + m1 * k) % lcm;
     if (res < 0) res += lcm;
     return {res, lcm};
 }
